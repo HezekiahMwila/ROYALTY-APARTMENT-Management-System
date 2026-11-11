@@ -1,0 +1,46 @@
+<%- include('../partials/head', { title: 'Problems' }) %>
+<div class="page-head">
+  <h1>Room problems</h1>
+  <p class="muted">Report anything that needs fixing in your room<%= user.room_id ? ` (Room ${user.room_id})` : '' %>.</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Report a problem</h2>
+    <% if (!user.room_id) { %>
+      <p class="muted">You need to be assigned to a room before reporting a problem.</p>
+    <% } else { %>
+      <form method="post" action="/student/problems" enctype="multipart/form-data">
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+          <% categories.forEach(c => { %><option><%= c %></option><% }) %>
+        </select>
+        <label for="description">What is wrong?</label>
+        <textarea id="description" name="description" minlength="5" maxlength="2000" required></textarea>
+        <label for="photo">Photo <span class="opt">(optional, max 5 MB)</span></label>
+        <input id="photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp">
+        <button class="btn" type="submit">Send report</button>
+      </form>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>My reports</h2>
+    <% if (!problems.length) { %><p class="muted">You have not reported any problems.</p><% } %>
+    <% problems.forEach(p => { %>
+      <div class="item">
+        <div class="item-head">
+          <b><%= p.category %></b>
+          <span class="badge <%= p.status %>"><%= statusLabel[p.status] || p.status %></span>
+        </div>
+        <div><%= p.description %></div>
+        <span class="muted small">
+          Reported <%= fmtDate(p.created_at) %>
+          <% if (p.photo) { %> · <a href="/uploads/<%= p.photo %>" target="_blank" rel="noopener">view photo</a><% } %>
+        </span>
+        <% if (p.admin_note) { %><div class="small" style="margin-top:4px"><b>Admin note:</b> <%= p.admin_note %></div><% } %>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include('../partials/foot') %>

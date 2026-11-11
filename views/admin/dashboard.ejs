@@ -1,0 +1,25 @@
+<%- include('../partials/head', { title: 'Admin overview' }) %>
+<div class="page-head">
+  <h1>Admin overview</h1>
+  <p class="muted">Royalty Apartments · <%= rooms.length %> rooms</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><b><%= stats.vacant %></b><span>Vacant rooms</span></div>
+  <a class="stat" href="/admin/students"><b><%= stats.students %> / <%= stats.beds %></b><span>Beds occupied</span></a>
+  <a class="stat" href="/admin/payments?status=pending"><b><%= stats.pendingPayments %></b><span>Payments to review</span></a>
+  <a class="stat" href="/admin/problems"><b><%= stats.openProblems %></b><span>Open problems</span></a>
+  <div class="stat"><b><%= money(stats.collected) %></b><span>Approved for this month</span></div>
+</div>
+
+<h2>Rooms <span class="muted small">· click a room to edit its occupants</span></h2>
+<div class="rooms">
+  <% rooms.forEach(r => { %>
+    <a class="room <%= r.status %>" href="/admin/rooms/<%= r.id %>">
+      <b>Room <%= r.id %></b>
+      <span class="beds"><%= r.occupants %> of <%= r.capacity %> beds taken</span>
+      <span class="badge <%= r.status %>"><%= statusLabel[r.status] %></span>
+    </a>
+  <% }) %>
+</div>
+<%- include('../partials/foot') %>

@@ -1,0 +1,42 @@
+<%- include('../partials/head', { title: 'Ratings' }) %>
+<div class="page-head">
+  <h1>Roommate ratings</h1>
+  <p class="muted">How students rate each other, out of 5 stars.</p>
+</div>
+
+<div class="grid2">
+  <div class="card table-wrap">
+    <h2>Average per student</h2>
+    <% if (!summary.length) { %><p class="empty">No ratings yet.</p><% } else { %>
+    <table>
+      <thead><tr><th>Student</th><th>Room</th><th>Average</th><th>Ratings</th></tr></thead>
+      <tbody>
+        <% summary.forEach(s => { %>
+          <tr>
+            <td><b><%= s.name %></b></td>
+            <td><%= s.room_id ? 'Room ' + s.room_id : '—' %></td>
+            <td><span class="stars" aria-hidden="true"><%= stars(s.avg) %></span> <%= s.avg.toFixed(1) %></td>
+            <td><%= s.n %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>All ratings</h2>
+    <% if (!ratings.length) { %><p class="empty">No ratings yet.</p><% } %>
+    <% ratings.forEach(r => { %>
+      <div class="item">
+        <div class="item-head">
+          <span><b><%= r.rater %></b> rated <b><%= r.ratee %></b></span>
+          <span class="stars" role="img" aria-label="<%= r.stars %> out of 5 stars"><%= stars(r.stars) %></span>
+        </div>
+        <% if (r.comment) { %><div>“<%= r.comment %>”</div><% } %>
+        <span class="muted small"><%= fmtDate(r.created_at) %></span>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include('../partials/foot') %>

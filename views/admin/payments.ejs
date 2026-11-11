@@ -1,0 +1,43 @@
+<%- include('../partials/head', { title: 'Payments' }) %>
+<div class="page-head">
+  <h1>Payments</h1>
+  <p class="muted">Open the screenshot to check a payment, then approve or reject it.</p>
+</div>
+
+<div class="tabs">
+  <% [['all', 'All'], ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected']].forEach(([key, label]) => { %>
+    <a href="/admin/payments<%= key === 'all' ? '' : '?status=' + key %>" class="<%= filter === key ? 'on' : '' %>"><%= label %></a>
+  <% }) %>
+</div>
+
+<div class="card">
+  <% if (!payments.length) { %><p class="empty">No payments here.</p><% } %>
+  <% payments.forEach(p => { %>
+    <div class="item">
+      <div class="item-head">
+        <div class="actions-row">
+          <a href="/uploads/<%= p.screenshot %>" target="_blank" rel="noopener" title="Open full screenshot">
+            <img class="thumb" src="/uploads/<%= p.screenshot %>" alt="Payment screenshot from <%= p.name %>" loading="lazy">
+          </a>
+          <div>
+            <b><%= p.name %></b> <span class="muted small"><%= p.student_no %><%= p.room_id ? ' · Room ' + p.room_id : '' %></span><br>
+            <b><%= money(p.amount) %></b> for <%= fmtPeriod(p.period) %><br>
+            <span class="muted small"><%= p.method %><%= p.reference ? ' · Ref ' + p.reference : '' %> · submitted <%= fmtDate(p.created_at) %></span>
+          </div>
+        </div>
+        <span class="badge <%= p.status %>"><%= p.status %></span>
+      </div>
+      <% if (p.status === 'pending') { %>
+        <form class="actions-row" method="post" action="/admin/payments/<%= p.id %>/review">
+          <input type="hidden" name="back" value="<%= filter %>">
+          <input name="note" maxlength="300" placeholder="Note to student (optional)" aria-label="Note to student">
+          <button class="btn sm green" type="submit" name="action" value="approve">Approve</button>
+          <button class="btn sm danger" type="submit" name="action" value="reject">Reject</button>
+        </form>
+      <% } else { %>
+        <span class="muted small">Reviewed <%= fmtDate(p.reviewed_at) %><%= p.admin_note ? ' · Note: ' + p.admin_note : '' %></span>
+      <% } %>
+    </div>
+  <% }) %>
+</div>
+<%- include('../partials/foot') %>

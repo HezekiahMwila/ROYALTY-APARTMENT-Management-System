@@ -1,0 +1,75 @@
+<%- include('../partials/head', { title: 'Room ' + room.id }) %>
+<div class="page-head">
+  <p class="small"><a href="/admin">← All rooms</a></p>
+  <h1>Room <%= room.id %> <span class="badge <%= room.status %>"><%= statusLabel[room.status] %></span></h1>
+  <p class="muted"><%= room.occupants %> of <%= room.capacity %> beds taken</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Occupants</h2>
+    <% if (!occupants.length) { %><p class="muted">Nobody is registered in this room, so it is vacant.</p><% } %>
+    <% occupants.forEach(o => { %>
+      <div class="item">
+        <div class="item-head">
+          <div>
+            <b><%= o.name %></b><br>
+            <span class="muted small"><%= o.student_no || 'No student number' %> · <%= o.phone || o.email %></span>
+          </div>
+          <div class="actions-row">
+            <a class="btn sm ghost" href="/admin/students/<%= o.id %>">Edit</a>
+            <form class="inline" method="post" action="/admin/rooms/<%= room.id %>/remove" onsubmit="return confirm('Remove this occupant from Room <%= room.id %>?')">
+              <input type="hidden" name="user_id" value="<%= o.id %>">
+              <button class="btn sm danger" type="submit">Remove</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+
+    <% if (room.status !== 'full') { %>
+      <h2 style="margin-top:20px">Add an occupant</h2>
+      <% if (!unassigned.length) { %>
+        <p class="muted small">There are no students without a room. <a href="/admin/students">Add a new student</a> or move one from their edit page.</p>
+      <% } else { %>
+        <form class="actions-row" method="post" action="/admin/rooms/<%= room.id %>/assign">
+          <select name="user_id" aria-label="Student to add" required>
+            <option value="">Choose a student…</option>
+            <% unassigned.forEach(u => { %><option value="<%= u.id %>"><%= u.name %><%= u.student_no ? ' (' + u.student_no + ')' : '' %></option><% }) %>
+          </select>
+          <button class="btn sm" type="submit">Add to room</button>
+        </form>
+      <% } %>
+    <% } %>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Room details</h2>
+      <form method="post" action="/admin/rooms/<%= room.id %>">
+        <div class="row">
+          <div>
+            <label for="capacity">Beds (capacity)</label>
+            <input id="capacity" name="capacity" type="number" min="1" max="10" value="<%= room.capacity %>" required>
+          </div>
+          <div>
+            <label for="rent">Monthly rent per student (<%= settings.currency %>)</label>
+            <input id="rent" name="rent" type="number" min="0" step="0.01" value="<%= room.rent %>" required>
+          </div>
+        </div>
+        <button class="btn" type="submit">Save</button>
+      </form>
+    </div>
+
+    <% if (occupants.length) { %>
+      <div class="card">
+        <h2>Mark room vacant</h2>
+        <p class="muted small">Removes every occupant from this room. Their accounts, payments and reports are kept.</p>
+        <form method="post" action="/admin/rooms/<%= room.id %>/vacate" onsubmit="return confirm('Remove all occupants and mark Room <%= room.id %> vacant?')">
+          <button class="btn danger" type="submit" style="margin-top:0">Mark vacant</button>
+        </form>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/foot') %>

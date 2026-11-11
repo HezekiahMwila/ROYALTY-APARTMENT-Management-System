@@ -1,0 +1,26 @@
+<%- include('partials/head', { title: 'Welcome' }) %>
+<section class="hero">
+  <h1>♛ Royalty Apartments</h1>
+  <p>University student boarding house. Pay your rent, report room problems and rate your roommates, all in one place.</p>
+  <div class="actions">
+    <% if (user) { %>
+      <a class="btn gold" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Go to my dashboard</a>
+    <% } else { %>
+      <a class="btn gold" href="/register">Register for a room</a>
+      <a class="btn ghost" href="/login">Log in</a>
+    <% } %>
+  </div>
+</section>
+
+<% const free = rooms.filter(r => r.status !== 'full').length; %>
+<h2>Room availability <span class="muted small">· <%= free %> of <%= rooms.length %> rooms have space</span></h2>
+<div class="rooms">
+  <% rooms.forEach(r => { %>
+    <div class="room <%= r.status %>">
+      <b>Room <%= r.id %></b>
+      <span class="beds"><%= r.occupants %> of <%= r.capacity %> beds taken</span>
+      <span class="badge <%= r.status %>"><%= statusLabel[r.status] %></span>
+    </div>
+  <% }) %>
+</div>
+<%- include('partials/foot') %>

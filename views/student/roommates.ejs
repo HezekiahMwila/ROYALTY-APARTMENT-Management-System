@@ -1,0 +1,28 @@
+<%- include('../partials/head', { title: 'Roommates' }) %>
+<div class="page-head">
+  <h1>Rate your roommates</h1>
+  <p class="muted">Give each roommate 1 to 5 stars. Only the admin sees who gave which rating, and you can change yours at any time.</p>
+</div>
+
+<% if (!roommates.length) { %>
+  <div class="card"><p class="muted" style="margin:0">You have no roommates to rate right now.</p></div>
+<% } %>
+
+<% roommates.forEach(m => { %>
+  <div class="card">
+    <h2><%= m.name %></h2>
+    <form method="post" action="/student/ratings">
+      <input type="hidden" name="ratee_id" value="<%= m.id %>">
+      <div class="stars-input" role="radiogroup" aria-label="Star rating for <%= m.name %>">
+        <% for (let i = 5; i >= 1; i--) { %>
+          <input type="radio" id="s<%= m.id %>_<%= i %>" name="stars" value="<%= i %>" <%= m.rating && m.rating.stars === i ? 'checked' : '' %> required>
+          <label for="s<%= m.id %>_<%= i %>" title="<%= i %> star<%= i > 1 ? 's' : '' %>" aria-label="<%= i %> star<%= i > 1 ? 's' : '' %>">★</label>
+        <% } %>
+      </div>
+      <label for="c<%= m.id %>">Comment <span class="opt">(optional)</span></label>
+      <input id="c<%= m.id %>" name="comment" maxlength="500" value="<%= m.rating ? m.rating.comment : '' %>">
+      <button class="btn" type="submit"><%= m.rating ? 'Update rating' : 'Save rating' %></button>
+    </form>
+  </div>
+<% }) %>
+<%- include('../partials/foot') %>

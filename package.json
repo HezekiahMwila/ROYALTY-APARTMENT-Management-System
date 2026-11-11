@@ -1,0 +1,18 @@
+{
+  "name": "royalty-apartments",
+  "version": "1.0.0",
+  "description": "Royalty Apartments - university boarding house management system",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "dependencies": {
+    "ejs": "^7.0.2",
+    "express": "^5.3.0",
+    "multer": "^2.5.0"
+  }
+}

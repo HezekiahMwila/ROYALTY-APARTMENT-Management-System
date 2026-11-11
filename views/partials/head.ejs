@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Royalty Apartments</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<%
+  const links = !user
+    ? [['/', 'Rooms'], ['/login', 'Log in'], ['/register', 'Register']]
+    : user.role === 'admin'
+      ? [['/admin', 'Overview'], ['/admin/students', 'Students'], ['/admin/payments', 'Payments'], ['/admin/problems', 'Problems'], ['/admin/ratings', 'Ratings'], ['/admin/settings', 'Settings'], ['/account', 'Account']]
+      : [['/student', 'My room'], ['/student/payments', 'Payments'], ['/student/problems', 'Problems'], ['/student/roommates', 'Roommates'], ['/account', 'Account']];
+  const exact = ['/', '/admin', '/student'];
+  const isOn = (href) => exact.includes(href) ? (path === href || (href === '/admin' && path.startsWith('/admin/rooms'))) : path.startsWith(href);
+%>
+<header class="top">
+  <a class="brand" href="/"><span class="crown">♛</span> Royalty Apartments</a>
+  <nav>
+    <% links.forEach(([href, label]) => { %><a href="<%= href %>" class="<%= isOn(href) ? 'on' : '' %>"><%= label %></a><% }) %>
+    <% if (user) { %><form method="post" action="/logout"><button type="submit">Log out</button></form><% } %>
+  </nav>
+</header>
+<main class="wrap">
+<% if (flash) { %><div class="flash <%= flash.type === 'ok' ? 'ok' : 'error' %>" role="status"><%= flash.text %></div><% } %>

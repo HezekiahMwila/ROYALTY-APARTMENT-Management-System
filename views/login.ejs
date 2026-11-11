@@ -1,0 +1,14 @@
+<%- include('partials/head', { title: 'Log in' }) %>
+<div class="card narrow">
+  <h1>Log in</h1>
+  <p class="muted">Students and admin use the same login.</p>
+  <form method="post" action="/login">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" required autofocus>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <button class="btn" type="submit">Log in</button>
+  </form>
+  <p class="small muted" style="margin-top:16px">New student? <a href="/register">Register for a room</a></p>
+</div>
+<%- include('partials/foot') %>

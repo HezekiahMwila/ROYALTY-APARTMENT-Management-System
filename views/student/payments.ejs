@@ -1,0 +1,57 @@
+<%- include('../partials/head', { title: 'Payments' }) %>
+<div class="page-head">
+  <h1>Payments</h1>
+  <p class="muted">Pay your rent, then upload a screenshot of the payment. The admin approves it after checking.</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Submit a payment</h2>
+    <% if (!room) { %>
+      <p class="muted">You need to be assigned to a room before making a payment.</p>
+    <% } else { %>
+      <% if (settings.payment_instructions) { %><div class="note"><b>How to pay</b>
+<%= settings.payment_instructions %></div><% } %>
+      <form method="post" action="/student/payments" enctype="multipart/form-data">
+        <div class="row">
+          <div>
+            <label for="amount">Amount (<%= settings.currency %>)</label>
+            <input id="amount" name="amount" type="number" min="1" step="0.01" value="<%= room.rent > 0 ? room.rent : '' %>" required>
+          </div>
+          <div>
+            <label for="period">Month paid for</label>
+            <input id="period" name="period" type="month" value="<%= thisMonth %>" required>
+          </div>
+        </div>
+        <label for="method">Payment method</label>
+        <select id="method" name="method" required>
+          <% methods.forEach(m => { %><option><%= m %></option><% }) %>
+        </select>
+        <label for="reference">Transaction reference <span class="opt">(optional)</span></label>
+        <input id="reference" name="reference" maxlength="100">
+        <label for="screenshot">Payment screenshot <span class="opt">(PNG, JPG or WEBP, max 5 MB)</span></label>
+        <input id="screenshot" name="screenshot" type="file" accept="image/png,image/jpeg,image/webp" required>
+        <button class="btn" type="submit">Submit payment</button>
+      </form>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>My payment history</h2>
+    <% if (!payments.length) { %><p class="muted">No payments yet.</p><% } %>
+    <% payments.forEach(p => { %>
+      <div class="item">
+        <div class="item-head">
+          <b><%= money(p.amount) %> · <%= fmtPeriod(p.period) %></b>
+          <span class="badge <%= p.status %>"><%= p.status %></span>
+        </div>
+        <span class="muted small">
+          <%= p.method %><%= p.reference ? ' · Ref ' + p.reference : '' %> · submitted <%= fmtDate(p.created_at) %> ·
+          <a href="/uploads/<%= p.screenshot %>" target="_blank" rel="noopener">view screenshot</a>
+        </span>
+        <% if (p.admin_note) { %><div class="small" style="margin-top:4px"><b>Admin note:</b> <%= p.admin_note %></div><% } %>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include('../partials/foot') %>

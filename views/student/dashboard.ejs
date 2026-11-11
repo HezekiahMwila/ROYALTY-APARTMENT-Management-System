@@ -1,0 +1,46 @@
+<%- include('../partials/head', { title: 'My room' }) %>
+<div class="page-head">
+  <h1>Hello, <%= user.name.split(' ')[0] %></h1>
+  <p class="muted">Student no. <%= user.student_no || '—' %></p>
+</div>
+
+<% if (!room) { %>
+  <div class="card">
+    <h2>You are not assigned to a room</h2>
+    <p class="muted">Please contact the admin to be placed in a room. You can still see your past payments and reports.</p>
+  </div>
+<% } else { %>
+  <div class="stats">
+    <div class="stat"><b>Room <%= room.id %></b><span><%= room.occupants %> of <%= room.capacity %> beds taken</span></div>
+    <div class="stat"><b><%= room.rent > 0 ? money(room.rent) : '—' %></b><span>Monthly rent</span></div>
+    <a class="stat" href="/student/problems"><b><%= openProblems %></b><span>Open problem reports</span></a>
+    <a class="stat" href="/student/roommates"><b><%= myRating.n ? myRating.avg.toFixed(1) + ' ★' : '—' %></b><span>My rating<%= myRating.n ? ` (${myRating.n})` : '' %></span></a>
+  </div>
+<% } %>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Recent payments</h2>
+    <% if (!payments.length) { %><p class="muted">No payments yet.</p><% } %>
+    <% payments.forEach(p => { %>
+      <div class="item">
+        <div class="item-head">
+          <b><%= money(p.amount) %> · <%= fmtPeriod(p.period) %></b>
+          <span class="badge <%= p.status %>"><%= p.status %></span>
+        </div>
+        <span class="muted small">Submitted <%= fmtDate(p.created_at) %></span>
+      </div>
+    <% }) %>
+    <a class="btn sm" style="margin-top:14px" href="/student/payments">Make a payment</a>
+  </div>
+
+  <div class="card">
+    <h2>Roommates</h2>
+    <% if (!roommates.length) { %><p class="muted">You have no roommates right now.</p><% } %>
+    <% roommates.forEach(m => { %>
+      <div class="item"><b><%= m.name %></b><br><span class="muted small"><%= m.phone %></span></div>
+    <% }) %>
+    <% if (roommates.length) { %><a class="btn sm ghost" style="margin-top:14px" href="/student/roommates">Rate roommates</a><% } %>
+  </div>
+</div>
+<%- include('../partials/foot') %>

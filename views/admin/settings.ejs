@@ -1,0 +1,13 @@
+<%- include('../partials/head', { title: 'Settings' }) %>
+<div class="card narrow">
+  <h1>Settings</h1>
+  <form method="post" action="/admin/settings">
+    <label for="currency">Currency symbol</label>
+    <input id="currency" name="currency" maxlength="5" value="<%= settings.currency %>" required>
+    <label for="payment_instructions">How students should pay <span class="opt">(shown on the payment page)</span></label>
+    <textarea id="payment_instructions" name="payment_instructions" maxlength="1000" placeholder="e.g. Send rent by mobile money to 09XX XXX XXX (Royalty Apartments), then upload the confirmation screenshot."><%= settings.payment_instructions %></textarea>
+    <button class="btn" type="submit">Save settings</button>
+  </form>
+  <p class="muted small" style="margin-top:16px">Rent and number of beds are set per room: open a room from the Overview page.</p>
+</div>
+<%- include('../partials/foot') %>

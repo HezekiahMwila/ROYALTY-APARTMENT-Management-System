@@ -1,0 +1,32 @@
+<%- include('../partials/head', { title: 'Problems' }) %>
+<div class="page-head">
+  <h1>Room problems</h1>
+  <p class="muted">Reports from students. Update the status so they can follow progress.</p>
+</div>
+
+<div class="card">
+  <% if (!problems.length) { %><p class="empty">No problems have been reported.</p><% } %>
+  <% problems.forEach(p => { %>
+    <div class="item">
+      <div class="item-head">
+        <div>
+          <b><%= p.category %><%= p.room_id ? ' · Room ' + p.room_id : '' %></b>
+          <span class="muted small">· <%= p.name %> · <%= fmtDate(p.created_at) %></span>
+        </div>
+        <span class="badge <%= p.status %>"><%= statusLabel[p.status] || p.status %></span>
+      </div>
+      <p><%= p.description %></p>
+      <% if (p.photo) { %>
+        <p><a href="/uploads/<%= p.photo %>" target="_blank" rel="noopener"><img class="thumb" src="/uploads/<%= p.photo %>" alt="Photo of the problem" loading="lazy"></a></p>
+      <% } %>
+      <form class="actions-row" method="post" action="/admin/problems/<%= p.id %>">
+        <select name="status" aria-label="Status">
+          <% statuses.forEach(st => { %><option value="<%= st %>" <%= st === p.status ? 'selected' : '' %>><%= statusLabel[st] || st[0].toUpperCase() + st.slice(1) %></option><% }) %>
+        </select>
+        <input name="note" maxlength="500" value="<%= p.admin_note %>" placeholder="Note to student (optional)" aria-label="Note to student">
+        <button class="btn sm" type="submit">Update</button>
+      </form>
+    </div>
+  <% }) %>
+</div>
+<%- include('../partials/foot') %>

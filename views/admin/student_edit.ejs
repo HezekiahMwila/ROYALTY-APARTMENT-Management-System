@@ -1,0 +1,40 @@
+<%- include('../partials/head', { title: 'Edit ' + s.name }) %>
+<div class="page-head">
+  <p class="small"><a href="/admin/students">← All students</a></p>
+  <h1>Edit <%= s.name %></h1>
+  <p class="muted">Registered <%= fmtDate(s.created_at) %></p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <form method="post" action="/admin/students/<%= s.id %>">
+      <label for="name">Full name</label>
+      <input id="name" name="name" value="<%= s.name %>" required>
+      <label for="student_no">Student number</label>
+      <input id="student_no" name="student_no" value="<%= s.student_no %>">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" value="<%= s.email %>" required>
+      <label for="phone">Phone number</label>
+      <input id="phone" name="phone" type="tel" value="<%= s.phone %>">
+      <label for="room_id">Room</label>
+      <select id="room_id" name="room_id">
+        <option value="">No room</option>
+        <% rooms.forEach(r => { %>
+          <option value="<%= r.id %>" <%= r.id === s.room_id ? 'selected' : '' %>>Room <%= r.id %><%= r.id === s.room_id ? ' (current)' : ` (${r.capacity - r.occupants} free)` %></option>
+        <% }) %>
+      </select>
+      <label for="password">Reset password <span class="opt">(leave blank to keep the current one)</span></label>
+      <input id="password" name="password" type="text" autocomplete="off" minlength="6">
+      <button class="btn" type="submit">Save changes</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Delete account</h2>
+    <p class="muted small">Permanently deletes this student together with their payment records, problem reports and ratings. To only take them out of a room, set Room to “No room” instead.</p>
+    <form method="post" action="/admin/students/<%= s.id %>/delete" onsubmit="return confirm('Permanently delete this student and all of their records? This cannot be undone.')">
+      <button class="btn danger" type="submit" style="margin-top:0">Delete student</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/foot') %>
