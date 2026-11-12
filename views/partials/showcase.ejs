@@ -1,19 +1,60 @@
-<%# Apartment photos and services, shown on the public and student homepages. %>
+<%# Apartment slideshow and services, shown on the public and student homepages. %>
+<%
+  // Until the caretaker uploads real photos in Settings, the slideshow shows demo pictures.
+  const demo = !photos.length;
+  const slides = demo
+    ? [1, 2, 3, 4, 5].map(n => ({ src: `/demo/slide-${n}.jpg`, caption: `Demo picture ${n}` }))
+    : photos.map(p => ({ src: `/photos/${p.file}`, caption: p.caption }));
+%>
 <section class="section">
   <h2>Our apartments</h2>
-  <% if (!photos.length) { %>
-    <div class="card muted">Photos of the apartments will be added soon.</div>
-  <% } else { %>
-    <div class="gallery">
-      <% photos.forEach(p => { %>
-        <figure>
-          <img src="/photos/<%= p.file %>" alt="<%= p.caption || 'Royalty Apartments' %>" loading="lazy">
-          <% if (p.caption) { %><figcaption><%= p.caption %></figcaption><% } %>
+  <div class="slideshow" data-slideshow aria-roledescription="carousel" aria-label="Photos of Royalty Apartments">
+    <div class="slides">
+      <% slides.forEach((s, i) => { %>
+        <figure class="slide <%= i === 0 ? 'on' : '' %>" aria-hidden="<%= i === 0 ? 'false' : 'true' %>">
+          <img src="<%= s.src %>" alt="<%= s.caption || 'Royalty Apartments' %>" <%= i === 0 ? '' : 'loading=lazy' %>>
+          <% if (s.caption) { %><figcaption><%= s.caption %></figcaption><% } %>
         </figure>
       <% }) %>
     </div>
-  <% } %>
+    <% if (slides.length > 1) { %>
+      <button class="slide-btn prev" type="button" aria-label="Previous picture">‹</button>
+      <button class="slide-btn next" type="button" aria-label="Next picture">›</button>
+      <div class="slide-dots">
+        <% slides.forEach((s, i) => { %><button type="button" class="<%= i === 0 ? 'on' : '' %>" aria-label="Show picture <%= i + 1 %>"></button><% }) %>
+      </div>
+    <% } %>
+  </div>
+  <% if (demo) { %><p class="muted small" style="margin-top:8px">These are demo pictures. Photos of the apartments will be added soon.</p><% } %>
 </section>
+
+<script>
+  // Slideshow: changes picture every 2 seconds, pauses while the pointer or keyboard focus is on it.
+  document.querySelectorAll('[data-slideshow]').forEach((box) => {
+    const slides = [...box.querySelectorAll('.slide')];
+    const dots = [...box.querySelectorAll('.slide-dots button')];
+    if (slides.length < 2) return;
+    let current = 0, timer = null;
+    const show = (n) => {
+      current = (n + slides.length) % slides.length;
+      slides.forEach((s, i) => { s.classList.toggle('on', i === current); s.setAttribute('aria-hidden', i !== current); });
+      dots.forEach((d, i) => d.classList.toggle('on', i === current));
+    };
+    const stop = () => { clearInterval(timer); timer = null; };
+    const start = () => {
+      if (timer || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      timer = setInterval(() => show(current + 1), 2000);
+    };
+    box.querySelector('.prev').addEventListener('click', () => show(current - 1));
+    box.querySelector('.next').addEventListener('click', () => show(current + 1));
+    dots.forEach((d, i) => d.addEventListener('click', () => show(i)));
+    box.addEventListener('mouseenter', stop);
+    box.addEventListener('mouseleave', start);
+    box.addEventListener('focusin', stop);
+    box.addEventListener('focusout', start);
+    start();
+  });
+</script>
 
 <% if (services.length) { %>
 <section class="section">

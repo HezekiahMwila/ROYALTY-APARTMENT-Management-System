@@ -1,0 +1,144 @@
+<%- include('../partials/head', { title: 'Scan QR code' }) %>
+<div class="page-head">
+  <h1>Scan room QR code</h1>
+  <p class="muted">
+    <% if (!room) { %>Ask the caretaker to show you the QR code for your room. Scanning it assigns you to that room.
+    <% } else if (!user.checked_in_at) { %>You are assigned to Room <%= room.id %>. Scan the Room <%= room.id %> QR code from the caretaker to check in.
+    <% } else { %>You are already checked in to Room <%= room.id %>. You do not need to scan again.<% } %>
+  </p>
+</div>
+
+<div class="grid2">
+  <div class="card scan-card">
+    <h2>Scan with your camera</h2>
+    <div class="scanner" id="scanner" hidden>
+      <video id="scan-video" playsinline muted></video>
+      <div class="scan-frame" aria-hidden="true"></div>
+    </div>
+    <p class="muted small" id="scan-status" role="status">Point your camera at the QR code on the caretaker’s screen.</p>
+    <div class="actions-row">
+      <button class="btn accent" type="button" id="scan-start">Start camera</button>
+      <button class="btn ghost" type="button" id="scan-stop" hidden>Stop camera</button>
+    </div>
+
+    <h2 style="margin-top:22px">Or take a photo of the code</h2>
+    <p class="muted small">Use this if the camera above does not start on your phone.</p>
+    <input id="scan-photo" type="file" accept="image/*" capture="environment" aria-label="Photo of the QR code">
+  </div>
+
+  <div class="card">
+    <h2>Or type the code</h2>
+    <p class="muted small">The room number and a 6-character code are written under the QR code.</p>
+    <form method="post" action="/student/scan">
+      <div class="row">
+        <div>
+          <label for="room">Room number</label>
+          <input id="room" name="room" type="number" min="1" inputmode="numeric" value="<%= room ? room.id : '' %>" required>
+        </div>
+        <div>
+          <label for="code">Code</label>
+          <input id="code" name="code" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase" required>
+        </div>
+      </div>
+      <button class="btn" type="submit">Submit code</button>
+    </form>
+  </div>
+</div>
+
+<script src="/vendor/jsqr.js"></script>
+<script>
+(() => {
+  const video = document.getElementById('scan-video');
+  const box = document.getElementById('scanner');
+  const status = document.getElementById('scan-status');
+  const startBtn = document.getElementById('scan-start');
+  const stopBtn = document.getElementById('scan-stop');
+  const photo = document.getElementById('scan-photo');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  let stream = null, raf = 0, done = false;
+
+  // A room QR code holds a link like https://site/checkin/12?code=ABC234.
+  // Only the room number and code are used, and the student always stays on this site.
+  function handle(text) {
+    const m = /\/checkin\/(\d{1,4})\?code=([A-Za-z0-9]{4,12})/.exec(text || '');
+    if (!m) { status.textContent = 'That is not a Royalty Apartments room QR code. Try again.'; return false; }
+    done = true;
+    stop();
+    status.textContent = 'QR code read: Room ' + m[1] + '. One moment…';
+    location.href = '/checkin/' + m[1] + '?code=' + m[2].toUpperCase();
+    return true;
+  }
+
+  function read(source, w, h) {
+    // Large photos are scaled down so reading stays fast.
+    const scale = Math.min(1, 1000 / Math.max(w, h));
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const found = jsQR(img.data, img.width, img.height);
+    return found ? found.data : null;
+  }
+
+  function tick() {
+    if (done || !stream) return;
+    if (video.readyState >= 2 && video.videoWidth) {
+      const text = read(video, video.videoWidth, video.videoHeight);
+      if (text && handle(text)) return;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function stop() {
+    cancelAnimationFrame(raf);
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+    box.hidden = true;
+    stopBtn.hidden = true;
+    startBtn.hidden = false;
+  }
+
+  async function start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      status.textContent = 'This browser cannot open the camera on this page. Take a photo of the code or type it instead.';
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch (err) {
+      status.textContent = err && err.name === 'NotAllowedError'
+        ? 'Camera permission was refused. Allow the camera, or take a photo of the code or type it instead.'
+        : 'No camera could be opened. Take a photo of the code or type it instead.';
+      return;
+    }
+    video.srcObject = stream;
+    box.hidden = false;
+    startBtn.hidden = true;
+    stopBtn.hidden = false;
+    status.textContent = 'Point your camera at the QR code on the caretaker’s screen.';
+    await video.play().catch(() => {});
+    tick();
+  }
+
+  startBtn.addEventListener('click', start);
+  stopBtn.addEventListener('click', stop);
+  window.addEventListener('pagehide', stop);
+
+  photo.addEventListener('change', () => {
+    const file = photo.files && photo.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      const text = read(img, img.naturalWidth, img.naturalHeight);
+      URL.revokeObjectURL(img.src);
+      if (!text) status.textContent = 'No QR code was found in that photo. Hold the phone closer and steady, then try again.';
+      else handle(text);
+      photo.value = '';
+    };
+    img.onerror = () => { status.textContent = 'That photo could not be opened. Try again.'; };
+    img.src = URL.createObjectURL(file);
+  });
+})();
+</script>
+<%- include('../partials/foot') %>

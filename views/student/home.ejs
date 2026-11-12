@@ -4,10 +4,15 @@
   <p><%= settings.welcome_message || 'Welcome to Royalty Apartments.' %></p>
   <p>
     <% if (user.room_id) { %>You are staying in <b>Room <%= user.room_id %></b>.
-    <% } else { %>You have not been assigned a room yet. The caretaker will place you in one soon.<% } %>
+    <% } else { %>You do not have a room yet. Scan the room QR code the caretaker shows you to be assigned to it.<% } %>
   </p>
   <div class="actions">
-    <a class="btn gold" href="/student/room">My room</a>
+    <% if (!user.room_id || !user.checked_in_at) { %>
+      <a class="btn accent" href="/student/scan">Scan room QR code</a>
+      <a class="btn ghost" href="/student/room">My room</a>
+    <% } else { %>
+      <a class="btn accent" href="/student/room">My room</a>
+    <% } %>
     <a class="btn ghost" href="/student/payments">Make a payment</a>
   </div>
 </section>

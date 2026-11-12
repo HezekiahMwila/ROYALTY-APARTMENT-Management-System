@@ -1,14 +1,15 @@
 <%# The index page: the first page everyone sees, students and admin alike. %>
 <%- include('partials/head', { title: 'Welcome' }) %>
 <section class="hero big">
+  <div class="hero-logo"><img src="/logo.svg" alt="" width="181" height="100"></div>
   <p class="eyebrow">University student boarding house</p>
   <h1>Welcome to Royalty Apartments</h1>
   <p><%= settings.welcome_message || 'A comfortable, secure home for university students.' %></p>
   <div class="actions">
     <% if (user) { %>
-      <a class="btn gold" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Continue as <%= user.name.split(' ')[0] %></a>
+      <a class="btn accent" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Continue as <%= user.name.split(' ')[0] %></a>
     <% } else { %>
-      <a class="btn gold" href="/login">Log in</a>
+      <a class="btn accent" href="/login">Log in</a>
       <a class="btn ghost" href="/register">Create a student account</a>
     <% } %>
   </div>

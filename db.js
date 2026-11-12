@@ -2,6 +2,7 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const TOTAL_ROOMS = 24;
 
@@ -136,5 +137,23 @@ run(`UPDATE settings SET value = ? WHERE key = 'services' AND value = ?`, SERVIC
 if (!all('PRAGMA table_info(users)').some((c) => c.name === 'photo')) {
   sqlite.exec('ALTER TABLE users ADD COLUMN photo TEXT');
 }
+// Room check-in: set when a student scans their room's QR code, cleared when their room changes.
+if (!all('PRAGMA table_info(users)').some((c) => c.name === 'checked_in_at')) {
+  sqlite.exec('ALTER TABLE users ADD COLUMN checked_in_at TEXT');
+}
 
-module.exports = { get, all, run, DATA_DIR, TOTAL_ROOMS, RESERVED_ROOMS };
+// Each room's QR code carries the room number plus a short secret code, so a student can only
+// join a room by scanning the code the caretaker shows them (not by guessing the room number).
+// Letters and digits that are easy to confuse (0/O, 1/I) are left out so it can be typed by hand.
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function newRoomCode(roomId) {
+  const code = Array.from({ length: 6 }, () => CODE_CHARS[crypto.randomInt(CODE_CHARS.length)]).join('');
+  run('UPDATE rooms SET qr_code = ? WHERE id = ?', code, roomId);
+  return code;
+}
+if (!all('PRAGMA table_info(rooms)').some((c) => c.name === 'qr_code')) {
+  sqlite.exec('ALTER TABLE rooms ADD COLUMN qr_code TEXT');
+}
+all('SELECT id FROM rooms WHERE qr_code IS NULL').forEach((r) => newRoomCode(r.id));
+
+module.exports = { get, all, run, newRoomCode, DATA_DIR, TOTAL_ROOMS, RESERVED_ROOMS };

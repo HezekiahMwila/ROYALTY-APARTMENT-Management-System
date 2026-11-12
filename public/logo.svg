@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 272 150" role="img" aria-label="Royalty Apartments">
+  <!-- Redrawn from the Royalty Apartments logo: a red and blue roof over the name. -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 60 L62 12 L118 60" stroke="#e8344e" stroke-width="6"/>
+    <path d="M22 112 V62 L62 28 L102 62" stroke="#3d5bd6" stroke-width="5"/>
+  </g>
+  <rect x="88" y="16" width="11" height="15" rx="1.5" fill="#3d5bd6"/>
+  <text x="32" y="108" font-family="'Arial Rounded MT Bold','Nunito','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="56" font-weight="900" font-style="italic" textLength="232" lengthAdjust="spacingAndGlyphs"><tspan fill="#e8344e">Roya</tspan><tspan fill="#3d5bd6">lty</tspan></text>
+  <text x="96" y="142" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="27" font-weight="600" font-style="italic" fill="#3d5bd6" textLength="160" lengthAdjust="spacingAndGlyphs">Apartments</text>
+</svg>

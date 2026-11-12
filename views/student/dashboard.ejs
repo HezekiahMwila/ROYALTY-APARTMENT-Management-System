@@ -20,9 +20,15 @@
 <% if (!room) { %>
   <div class="card">
     <h2>No room yet</h2>
-    <p class="muted" style="margin:0">The caretaker has not assigned you a room yet. Your room details will appear here once they do.</p>
+    <p class="muted">Ask the caretaker to show you the QR code for your room, then scan it to be assigned to that room.</p>
+    <a class="btn accent" href="/student/scan">Scan room QR code</a>
   </div>
 <% } else { %>
+  <% if (user.checked_in_at) { %>
+    <div class="checkin done"><b>Checked in to Room <%= room.id %></b> on <%= fmtDate(user.checked_in_at) %>.</div>
+  <% } else { %>
+    <div class="checkin"><b>You have not checked in yet.</b> Ask the caretaker to show you the Room <%= room.id %> QR code, then <a href="/student/scan">scan it to check in</a>.</div>
+  <% } %>
   <div class="stats">
     <div class="stat"><b>Room <%= room.id %></b><span>Room number</span></div>
     <div class="stat"><b><%= room.rent > 0 ? money(room.rent) : '—' %></b><span>Monthly rent</span></div>

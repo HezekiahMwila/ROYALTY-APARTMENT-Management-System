@@ -4,6 +4,8 @@ const multer = require('multer');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const QRCode = require('qrcode');
 const db = require('./db');
 
 const PORT = process.env.PORT || 3000;
@@ -103,6 +105,29 @@ function createUser({ role, name, student_no, email, phone, password, room_id })
     role, name, student_no || '', email.toLowerCase(), phone || '', hashPassword(password), room_id ?? null, now()
   );
   return null;
+}
+
+// The address phones should open when they scan a room QR code. Set PUBLIC_URL when the site
+// is hosted online. Otherwise use the address the admin is browsing on; if that is "localhost"
+// (which a phone cannot reach), swap in this computer's address on the local network.
+function publicOrigin(req) {
+  if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/+$/, '');
+  const host = req.get('host') || `localhost:${PORT}`;
+  if (/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(host)) {
+    const lan = Object.values(os.networkInterfaces()).flat().find((n) => n && n.family === 'IPv4' && !n.internal);
+    const port = (host.match(/:\d+$/) || [''])[0];
+    if (lan) return `http://${lan.address}${port}`;
+  }
+  return `${req.protocol}://${host}`;
+}
+
+// A check-in link is remembered across the login page, so a student who scans
+// the QR code before logging in still ends up checked in.
+const CHECKIN_PATH = /^\/checkin\/\d{1,4}\?code=[A-Z0-9]{4,12}$/;
+function afterLogin(req, res, fallback) {
+  const next = parseCookies(req.headers.cookie).next;
+  res.clearCookie('next');
+  return next && CHECKIN_PATH.test(next) ? next : fallback;
 }
 
 function deleteUpload(file) {
@@ -233,7 +258,7 @@ app.post('/login', (req, res) => {
     return res.redirect('/login');
   }
   startSession(res, user.id);
-  res.redirect(homeFor(user));
+  res.redirect(afterLogin(req, res, homeFor(user)));
 });
 
 app.post('/logout', (req, res) => {
@@ -261,7 +286,45 @@ app.post('/register', (req, res) => {
   if (error) { flash(res, 'error', error); return res.redirect('/register'); }
   startSession(res, db.get('SELECT id FROM users WHERE email = ?', email).id);
   flash(res, 'ok', 'Your account is ready. The caretaker will assign you a room.');
-  res.redirect('/student');
+  res.redirect(afterLogin(req, res, '/student'));
+});
+
+// Room QR codes. The caretaker opens a room in the admin account and shows its QR code, which
+// holds the room number and that room's secret code. A student who scans it is assigned to the
+// room (if they have no room yet) and checked in. Returns [flash type, message].
+function scanRoomCode(user, roomId, code) {
+  const room = getRoom(roomId);
+  if (!room || room.status === 'reserved') return ['error', 'That room QR code is not valid.'];
+  if (!code || String(code).toUpperCase() !== room.qr_code) {
+    return ['error', 'That QR code is out of date, or the code was typed wrongly. Ask the caretaker to show you the current one.'];
+  }
+  if (user.room_id && user.room_id !== room.id) {
+    return ['error', `This QR code is for Room ${room.id}, but you are already in Room ${user.room_id}. Ask the caretaker to move you.`];
+  }
+  if (user.room_id === room.id) {
+    if (user.checked_in_at) return ['ok', `You are already checked in to Room ${room.id}.`];
+    db.run('UPDATE users SET checked_in_at = ? WHERE id = ?', now(), user.id);
+    return ['ok', `Welcome! You are checked in to Room ${room.id}.`];
+  }
+  if (!isOpen(room)) return ['error', `Room ${room.id} is full. Please speak to the caretaker.`];
+  db.run('UPDATE users SET room_id = ?, checked_in_at = ? WHERE id = ?', room.id, now(), user.id);
+  return ['ok', `Welcome! You have been assigned to Room ${room.id}.`];
+}
+
+// The link inside the QR code. Phone cameras open it directly; the in-site scanner sends students here too.
+app.get('/checkin/:room', (req, res) => {
+  const roomId = int(req.params.room);
+  const code = str(req.query.code, 12).toUpperCase();
+  const u = req.user;
+  if (!u) {
+    const next = `/checkin/${roomId}?code=${code}`;
+    if (CHECKIN_PATH.test(next)) res.cookie('next', next, { httpOnly: true, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+    flash(res, 'ok', 'Log in to finish scanning your room QR code.');
+    return res.redirect('/login');
+  }
+  if (u.role === 'admin') return res.redirect(getRoom(roomId) ? `/admin/rooms/${roomId}` : '/admin');
+  flash(res, ...scanRoomCode(u, roomId, code));
+  res.redirect('/student/room');
 });
 
 app.get('/account', (req, res) => {
@@ -334,6 +397,20 @@ app.get('/student/room', student, (req, res) => {
     openProblems: db.get(`SELECT COUNT(*) AS n FROM problems WHERE user_id = ? AND status <> 'resolved'`, u.id).n,
   });
 });
+
+// Scan page: camera scanner, photo fallback, and typing the code by hand.
+app.get('/student/scan', student, (req, res) => {
+  res.render('student/scan', { room: req.user.room_id ? getRoom(req.user.room_id) : null });
+});
+
+app.post('/student/scan', student, (req, res) => {
+  const [type, text] = scanRoomCode(req.user, int(req.body.room), str(req.body.code, 12));
+  flash(res, type, text);
+  res.redirect(type === 'ok' ? '/student/room' : '/student/scan');
+});
+
+// The QR reader used by the scan page (from the jsqr package).
+app.get('/vendor/jsqr.js', (req, res) => res.sendFile(require.resolve('jsqr')));
 
 app.post('/student/photo', student, imageUpload('photo', '/student/room'), (req, res) => {
   if (!req.file) flash(res, 'error', 'Please choose a picture to upload.');
@@ -449,12 +526,15 @@ app.get('/admin', admin, (req, res) => {
   });
 });
 
-app.get('/admin/rooms/:id', admin, (req, res) => {
+app.get('/admin/rooms/:id', admin, async (req, res) => {
   const room = getRoom(int(req.params.id));
   if (!room) return res.status(404).render('message', { title: 'Not found', text: 'That room does not exist.' });
+  const checkinUrl = `${publicOrigin(req)}/checkin/${room.id}?code=${room.qr_code}`;
   res.render('admin/room', {
     room,
-    occupants: db.all(`SELECT id, name, student_no, phone, email FROM users WHERE room_id = ? ORDER BY name`, room.id),
+    checkinUrl,
+    qr: room.status === 'reserved' ? null : await QRCode.toString(checkinUrl, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' }),
+    occupants: db.all(`SELECT id, name, student_no, phone, email, checked_in_at FROM users WHERE room_id = ? ORDER BY name`, room.id),
     unassigned: db.all(`SELECT id, name, student_no FROM users WHERE role = 'student' AND room_id IS NULL ORDER BY name`),
   });
 });
@@ -471,9 +551,18 @@ app.post('/admin/rooms/:id', admin, (req, res) => {
   res.redirect(`/admin/rooms/${room.id}`);
 });
 
+// Replace a room's QR code, so copies of the old one stop working.
+app.post('/admin/rooms/:id/qr', admin, (req, res) => {
+  const room = getRoom(int(req.params.id));
+  if (!room) return res.redirect('/admin');
+  db.newRoomCode(room.id);
+  flash(res, 'ok', `Room ${room.id} has a new QR code. The old one no longer works.`);
+  res.redirect(`/admin/rooms/${room.id}`);
+});
+
 app.post('/admin/rooms/:id/vacate', admin, (req, res) => {
   const id = int(req.params.id);
-  const { changes } = db.run('UPDATE users SET room_id = NULL WHERE room_id = ?', id);
+  const { changes } = db.run('UPDATE users SET room_id = NULL, checked_in_at = NULL WHERE room_id = ?', id);
   flash(res, 'ok', `Room ${id} marked vacant (${changes} occupant${changes === 1 ? '' : 's'} removed).`);
   res.redirect(`/admin/rooms/${id}`);
 });
@@ -483,15 +572,15 @@ app.post('/admin/rooms/:id/assign', admin, (req, res) => {
   const userId = int(req.body.user_id);
   if (!roomHasSpace(id)) flash(res, 'error', 'That room is full or reserved.');
   else {
-    const { changes } = db.run(`UPDATE users SET room_id = ? WHERE id = ? AND role = 'student'`, id, userId);
-    flash(res, changes ? 'ok' : 'error', changes ? 'Student added to the room.' : 'Please choose a student.');
+    const { changes } = db.run(`UPDATE users SET room_id = ?, checked_in_at = NULL WHERE id = ? AND role = 'student'`, id, userId);
+    flash(res, changes ? 'ok' : 'error', changes ? 'Student added to the room. They can scan the room QR code to check in.' : 'Please choose a student.');
   }
   res.redirect(`/admin/rooms/${id}`);
 });
 
 app.post('/admin/rooms/:id/remove', admin, (req, res) => {
   const id = int(req.params.id);
-  db.run('UPDATE users SET room_id = NULL WHERE id = ? AND room_id = ?', int(req.body.user_id), id);
+  db.run('UPDATE users SET room_id = NULL, checked_in_at = NULL WHERE id = ? AND room_id = ?', int(req.body.user_id), id);
   flash(res, 'ok', 'Occupant removed from the room.');
   res.redirect(`/admin/rooms/${id}`);
 });
@@ -554,6 +643,8 @@ app.post('/admin/students/:id', admin, (req, res) => {
     'UPDATE users SET name = ?, student_no = ?, email = ?, phone = ?, room_id = ? WHERE id = ?',
     name, str(req.body.student_no, 50), email.toLowerCase(), phone, room_id, s.id
   );
+  // A student who is moved to another room has to check in to the new one.
+  if (room_id !== s.room_id) db.run('UPDATE users SET checked_in_at = NULL WHERE id = ?', s.id);
   if (password) {
     db.run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(password), s.id);
     db.run('DELETE FROM sessions WHERE user_id = ?', s.id);
