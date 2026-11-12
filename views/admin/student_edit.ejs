@@ -1,6 +1,7 @@
 <%- include('../partials/head', { title: 'Edit ' + s.name }) %>
 <div class="page-head">
   <p class="small"><a href="/admin/students">← All students</a></p>
+  <% if (s.photo) { %><img class="avatar" src="/uploads/<%= s.photo %>" alt="Profile picture of <%= s.name %>" style="margin-bottom:10px"><% } %>
   <h1>Edit <%= s.name %></h1>
   <p class="muted">Registered <%= fmtDate(s.created_at) %></p>
 </div>
@@ -10,12 +11,12 @@
     <form method="post" action="/admin/students/<%= s.id %>">
       <label for="name">Full name</label>
       <input id="name" name="name" value="<%= s.name %>" required>
-      <label for="student_no">Student number</label>
+      <label for="student_no">Student number <span class="opt">(optional)</span></label>
       <input id="student_no" name="student_no" value="<%= s.student_no %>">
       <label for="email">Email</label>
       <input id="email" name="email" type="email" value="<%= s.email %>" required>
-      <label for="phone">Phone number</label>
-      <input id="phone" name="phone" type="tel" value="<%= s.phone %>">
+      <label for="phone">Phone number <span class="opt">(their login)</span></label>
+      <input id="phone" name="phone" type="tel" value="<%= s.phone %>" required>
       <label for="room_id">Room</label>
       <select id="room_id" name="room_id">
         <option value="">No room</option>

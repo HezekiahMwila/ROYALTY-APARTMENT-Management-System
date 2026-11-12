@@ -4,6 +4,15 @@ const path = require('path');
 const fs = require('fs');
 
 const TOTAL_ROOMS = 24;
+
+// Bedspaces per room are fixed by the building, not editable in the admin.
+// Every room has 2 bedspaces except the ones listed here.
+const DEFAULT_BEDSPACES = 2;
+const BEDSPACES = { 2: 4, 4: 3 };
+const bedspacesFor = (roomId) => BEDSPACES[roomId] ?? DEFAULT_BEDSPACES;
+
+// Reserved rooms are not available to students.
+const RESERVED_ROOMS = [1];
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -75,6 +84,13 @@ sqlite.exec(`
     UNIQUE (rater_id, ratee_id)
   );
 
+  CREATE TABLE IF NOT EXISTS photos (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    file       TEXT NOT NULL,
+    caption    TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -89,7 +105,36 @@ const run = (sql, ...params) => sqlite.prepare(sql).run(...params);
 if (get('SELECT COUNT(*) AS n FROM rooms').n === 0) {
   for (let i = 1; i <= TOTAL_ROOMS; i++) run('INSERT INTO rooms (id) VALUES (?)', i);
 }
+// Keep the stored bedspace counts in line with the fixed values above.
+for (let i = 1; i <= TOTAL_ROOMS; i++) run('UPDATE rooms SET capacity = ? WHERE id = ?', bedspacesFor(i), i);
 run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('currency', 'K')`);
 run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('payment_instructions', '')`);
+run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('welcome_message', 'A comfortable, secure home for university students.')`);
+// Services offered. The admin can edit these in Settings (one service per line).
+const SERVICES = [
+  'Starlink Internet',
+  'Shared Lounge',
+  '24/7 Electricity',
+  '24/7 Water',
+  '24/7 Security (CCTV)',
+  'Cleaning of Surroundings',
+  'Gas cooker for some rooms',
+].join('\n');
+run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('services', ?)`, SERVICES);
+// Replace the placeholder list from earlier versions, unless the admin already edited it.
+run(`UPDATE settings SET value = ? WHERE key = 'services' AND value = ?`, SERVICES, [
+  'Furnished rooms with beds and study desks',
+  'Running water',
+  'Electricity',
+  'Wi-Fi internet',
+  '24-hour security',
+  'Shared kitchen',
+  'Cleaning of shared areas',
+].join('\n'));
 
-module.exports = { get, all, run, DATA_DIR, TOTAL_ROOMS };
+// Upgrade older databases: profile pictures were added later.
+if (!all('PRAGMA table_info(users)').some((c) => c.name === 'photo')) {
+  sqlite.exec('ALTER TABLE users ADD COLUMN photo TEXT');
+}
+
+module.exports = { get, all, run, DATA_DIR, TOTAL_ROOMS, RESERVED_ROOMS };

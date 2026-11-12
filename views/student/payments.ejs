@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: 'Payments' }) %>
 <div class="page-head">
   <h1>Payments</h1>
-  <p class="muted">Pay your rent, then upload a screenshot of the payment. The admin approves it after checking.</p>
+  <p class="muted">Pay your rent, then upload a screenshot of the payment. A payment cannot be submitted without its screenshot.</p>
 </div>
 
 <div class="grid2">
@@ -29,7 +29,7 @@
         </select>
         <label for="reference">Transaction reference <span class="opt">(optional)</span></label>
         <input id="reference" name="reference" maxlength="100">
-        <label for="screenshot">Payment screenshot <span class="opt">(PNG, JPG or WEBP, max 5 MB)</span></label>
+        <label for="screenshot">Payment screenshot <span class="opt">(required · PNG, JPG or WEBP, max 5 MB)</span></label>
         <input id="screenshot" name="screenshot" type="file" accept="image/png,image/jpeg,image/webp" required>
         <button class="btn" type="submit">Submit payment</button>
       </form>

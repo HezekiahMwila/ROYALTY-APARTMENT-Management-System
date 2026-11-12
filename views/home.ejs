@@ -1,26 +1,29 @@
+<%# The index page: the first page everyone sees, students and admin alike. %>
 <%- include('partials/head', { title: 'Welcome' }) %>
-<section class="hero">
-  <h1>♛ Royalty Apartments</h1>
-  <p>University student boarding house. Pay your rent, report room problems and rate your roommates, all in one place.</p>
+<section class="hero big">
+  <p class="eyebrow">University student boarding house</p>
+  <h1>Welcome to Royalty Apartments</h1>
+  <p><%= settings.welcome_message || 'A comfortable, secure home for university students.' %></p>
   <div class="actions">
     <% if (user) { %>
-      <a class="btn gold" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Go to my dashboard</a>
+      <a class="btn gold" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Continue as <%= user.name.split(' ')[0] %></a>
     <% } else { %>
-      <a class="btn gold" href="/register">Register for a room</a>
-      <a class="btn ghost" href="/login">Log in</a>
+      <a class="btn gold" href="/login">Log in</a>
+      <a class="btn ghost" href="/register">Create a student account</a>
     <% } %>
   </div>
+  <% if (!user) { %><p class="small" style="margin:14px auto 0">Students and the admin log in from the same page.</p><% } %>
 </section>
 
-<% const free = rooms.filter(r => r.status !== 'full').length; %>
-<h2>Room availability <span class="muted small">· <%= free %> of <%= rooms.length %> rooms have space</span></h2>
-<div class="rooms">
-  <% rooms.forEach(r => { %>
-    <div class="room <%= r.status %>">
-      <b>Room <%= r.id %></b>
-      <span class="beds"><%= r.occupants %> of <%= r.capacity %> beds taken</span>
-      <span class="badge <%= r.status %>"><%= statusLabel[r.status] %></span>
-    </div>
-  <% }) %>
-</div>
+<%- include('partials/showcase') %>
+
+<% const free = rooms.filter(r => r.status === 'vacant' || r.status === 'available').length; %>
+<section class="section">
+  <h2>Room availability <span class="muted small">· <%= free %> of <%= rooms.length %> rooms have space</span></h2>
+  <div class="rooms">
+    <% rooms.forEach(r => { %>
+      <%- include('partials/room_card', { r }) %>
+    <% }) %>
+  </div>
+</section>
 <%- include('partials/foot') %>

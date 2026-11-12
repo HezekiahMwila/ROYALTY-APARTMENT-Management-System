@@ -1,13 +1,52 @@
 <%- include('../partials/head', { title: 'Settings' }) %>
-<div class="card narrow">
+<div class="page-head">
   <h1>Settings</h1>
-  <form method="post" action="/admin/settings">
-    <label for="currency">Currency symbol</label>
-    <input id="currency" name="currency" maxlength="5" value="<%= settings.currency %>" required>
-    <label for="payment_instructions">How students should pay <span class="opt">(shown on the payment page)</span></label>
-    <textarea id="payment_instructions" name="payment_instructions" maxlength="1000" placeholder="e.g. Send rent by mobile money to 09XX XXX XXX (Royalty Apartments), then upload the confirmation screenshot."><%= settings.payment_instructions %></textarea>
-    <button class="btn" type="submit">Save settings</button>
-  </form>
-  <p class="muted small" style="margin-top:16px">Rent and number of beds are set per room: open a room from the Overview page.</p>
+  <p class="muted">Rent is set per room: open a room from the Overview page. The number of bedspaces in each room is fixed.</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Homepage and payments</h2>
+    <form method="post" action="/admin/settings">
+      <label for="welcome_message">Welcome message <span class="opt">(shown at the top of the homepage)</span></label>
+      <input id="welcome_message" name="welcome_message" maxlength="300" value="<%= settings.welcome_message %>">
+      <label for="services">Services offered <span class="opt">(one per line)</span></label>
+      <textarea id="services" name="services" maxlength="2000" style="min-height:170px"><%= settings.services %></textarea>
+      <label for="payment_instructions">How students should pay <span class="opt">(shown on the payment page)</span></label>
+      <textarea id="payment_instructions" name="payment_instructions" maxlength="1000" placeholder="e.g. Send rent by mobile money to 09XX XXX XXX (Royalty Apartments), then upload the confirmation screenshot."><%= settings.payment_instructions %></textarea>
+      <label for="currency">Currency symbol</label>
+      <input id="currency" name="currency" maxlength="5" value="<%= settings.currency %>" required>
+      <button class="btn" type="submit">Save settings</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Apartment photos</h2>
+    <p class="muted small">These appear on the homepage for visitors and students.</p>
+    <form method="post" action="/admin/photos" enctype="multipart/form-data">
+      <label for="photo">Photo <span class="opt">(PNG, JPG or WEBP, max 5 MB)</span></label>
+      <input id="photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" required>
+      <label for="caption">Caption <span class="opt">(optional)</span></label>
+      <input id="caption" name="caption" maxlength="80" placeholder="e.g. Shared kitchen">
+      <button class="btn" type="submit">Add photo</button>
+    </form>
+
+    <div style="margin-top:20px">
+      <% if (!photos.length) { %><p class="muted">No photos yet.</p><% } %>
+      <% photos.forEach(p => { %>
+        <div class="item">
+          <div class="item-head">
+            <div class="actions-row">
+              <img class="thumb" src="/photos/<%= p.file %>" alt="<%= p.caption || 'Apartment photo' %>" loading="lazy">
+              <span><%= p.caption || 'No caption' %></span>
+            </div>
+            <form class="inline" method="post" action="/admin/photos/<%= p.id %>/delete" onsubmit="return confirm('Remove this photo from the homepage?')">
+              <button class="btn sm danger" type="submit">Remove</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
 </div>
 <%- include('../partials/foot') %>

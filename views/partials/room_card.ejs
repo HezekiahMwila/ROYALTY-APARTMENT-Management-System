@@ -1,0 +1,13 @@
+<%
+  // One room button: room number, bedspaces taken, bedspaces remaining.
+  const left = r.capacity - r.occupants;
+  const lastLine = r.status === 'reserved' ? 'Reserved'
+    : left <= 0 ? 'Full'
+    : `${left} bedspace${left === 1 ? '' : 's'} remaining`;
+  const href = locals.href;
+%>
+<% if (href) { %><a class="room <%= r.status %>" href="<%= href %>"><% } else { %><div class="room <%= r.status %>"><% } %>
+  <b>Room <%= r.id %></b>
+  <span class="taken"><%= r.status === 'reserved' ? 'Not available' : `${r.occupants} of ${r.capacity} bedspaces taken` %></span>
+  <span class="left"><%= lastLine %></span>
+<% if (href) { %></a><% } else { %></div><% } %>

@@ -1,30 +1,18 @@
 <%- include('partials/head', { title: 'Register' }) %>
 <div class="card narrow">
-  <h1>Register for a room</h1>
-  <% if (!rooms.length) { %>
-    <p class="muted">Sorry, every room is full at the moment. Please check back later or contact the admin.</p>
-  <% } else { %>
+  <h1>Create your account</h1>
+  <p class="muted">The caretaker will assign you a room after you register.</p>
   <form method="post" action="/register">
     <label for="name">Full name</label>
     <input id="name" name="name" autocomplete="name" required autofocus>
-    <label for="student_no">Student number</label>
-    <input id="student_no" name="student_no" required>
+    <label for="phone">Phone number <span class="opt">(you will log in with this)</span></label>
+    <input id="phone" name="phone" type="tel" autocomplete="tel" required>
     <label for="email">Email</label>
     <input id="email" name="email" type="email" autocomplete="email" required>
-    <label for="phone">Phone number</label>
-    <input id="phone" name="phone" type="tel" autocomplete="tel" required>
-    <label for="room_id">Room</label>
-    <select id="room_id" name="room_id" required>
-      <option value="">Choose a room…</option>
-      <% rooms.forEach(r => { %>
-        <option value="<%= r.id %>">Room <%= r.id %> — <%= r.capacity - r.occupants %> of <%= r.capacity %> beds free<%= r.rent > 0 ? ` · ${money(r.rent)}/month` : '' %></option>
-      <% }) %>
-    </select>
     <label for="password">Password <span class="opt">(at least 6 characters)</span></label>
     <input id="password" name="password" type="password" autocomplete="new-password" minlength="6" required>
     <button class="btn" type="submit">Create my account</button>
   </form>
-  <% } %>
   <p class="small muted" style="margin-top:16px">Already registered? <a href="/login">Log in</a></p>
 </div>
 <%- include('partials/foot') %>

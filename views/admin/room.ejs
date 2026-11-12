@@ -2,13 +2,13 @@
 <div class="page-head">
   <p class="small"><a href="/admin">← All rooms</a></p>
   <h1>Room <%= room.id %> <span class="badge <%= room.status %>"><%= statusLabel[room.status] %></span></h1>
-  <p class="muted"><%= room.occupants %> of <%= room.capacity %> beds taken</p>
+  <p class="muted"><%= room.status === 'reserved' ? 'This room is reserved and not available to students.' : `${room.occupants} of ${room.capacity} bedspaces taken` %></p>
 </div>
 
 <div class="grid2">
   <div class="card">
     <h2>Occupants</h2>
-    <% if (!occupants.length) { %><p class="muted">Nobody is registered in this room, so it is vacant.</p><% } %>
+    <% if (!occupants.length) { %><p class="muted"><%= room.status === 'reserved' ? 'Reserved rooms have no student occupants.' : 'Nobody is registered in this room, so it is vacant.' %></p><% } %>
     <% occupants.forEach(o => { %>
       <div class="item">
         <div class="item-head">
@@ -27,7 +27,7 @@
       </div>
     <% }) %>
 
-    <% if (room.status !== 'full') { %>
+    <% if (room.status === 'vacant' || room.status === 'available') { %>
       <h2 style="margin-top:20px">Add an occupant</h2>
       <% if (!unassigned.length) { %>
         <p class="muted small">There are no students without a room. <a href="/admin/students">Add a new student</a> or move one from their edit page.</p>
@@ -47,16 +47,9 @@
     <div class="card">
       <h2>Room details</h2>
       <form method="post" action="/admin/rooms/<%= room.id %>">
-        <div class="row">
-          <div>
-            <label for="capacity">Beds (capacity)</label>
-            <input id="capacity" name="capacity" type="number" min="1" max="10" value="<%= room.capacity %>" required>
-          </div>
-          <div>
-            <label for="rent">Monthly rent per student (<%= settings.currency %>)</label>
-            <input id="rent" name="rent" type="number" min="0" step="0.01" value="<%= room.rent %>" required>
-          </div>
-        </div>
+        <p><b><%= room.capacity %> bedspaces</b> <span class="muted small">(fixed for this room)</span></p>
+        <label for="rent">Monthly rent per student (<%= settings.currency %>)</label>
+        <input id="rent" name="rent" type="number" min="0" step="0.01" value="<%= room.rent %>" required>
         <button class="btn" type="submit">Save</button>
       </form>
     </div>

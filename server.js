@@ -26,6 +26,13 @@ app.use(express.urlencoded({ extended: false }));
 const now = () => new Date().toISOString();
 const str = (v, max = 200) => String(v ?? '').trim().slice(0, max);
 const int = (v) => (/^\d+$/.test(String(v ?? '')) ? Number(v) : NaN);
+// Phone numbers are the student login, so store them without spaces or dashes.
+const normPhone = (v) => {
+  const s = str(v, 30);
+  const digits = s.replace(/\D/g, '');
+  return digits ? (s.startsWith('+') ? '+' : '') + digits : '';
+};
+const validPhone = (p) => p.replace(/\D/g, '').length >= 7;
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -66,15 +73,18 @@ const adminExists = () => !!db.get(`SELECT 1 AS x FROM users WHERE role = 'admin
 // Rooms with live occupant counts. A room is "vacant" automatically
 // whenever nobody is registered in it.
 function roomStatus(r) {
+  if (db.RESERVED_ROOMS.includes(r.id)) return 'reserved';
   return r.occupants === 0 ? 'vacant' : r.occupants < r.capacity ? 'available' : 'full';
 }
+// Rooms a student can still be placed in.
+const isOpen = (r) => r.status === 'vacant' || r.status === 'available';
 const ROOM_SQL = `SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.room_id = r.id) AS occupants FROM rooms r`;
 const listRooms = () => db.all(`${ROOM_SQL} ORDER BY r.id`).map((r) => ({ ...r, status: roomStatus(r) }));
 function getRoom(id) {
   const r = db.get(`${ROOM_SQL} WHERE r.id = ?`, id);
   return r ? { ...r, status: roomStatus(r) } : null;
 }
-const roomHasSpace = (id) => { const r = getRoom(id); return !!r && r.occupants < r.capacity; };
+const roomHasSpace = (id) => { const r = getRoom(id); return !!r && isOpen(r); };
 
 // Validates and inserts a user. Returns an error message, or null on success.
 function createUser({ role, name, student_no, email, phone, password, room_id }) {
@@ -82,7 +92,11 @@ function createUser({ role, name, student_no, email, phone, password, room_id })
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
   if (password.length < 6) return 'Password must be at least 6 characters.';
   if (db.get('SELECT 1 AS x FROM users WHERE email = ?', email)) return 'That email address is already registered.';
-  if (room_id != null && !roomHasSpace(room_id)) return 'That room is full or does not exist. Please choose another.';
+  if (role === 'student') {
+    if (!validPhone(phone || '')) return 'Please enter a valid phone number.';
+    if (db.get('SELECT 1 AS x FROM users WHERE phone = ?', phone)) return 'That phone number is already registered.';
+  }
+  if (room_id != null && !roomHasSpace(room_id)) return 'That room is full or not available. Please choose another.';
   db.run(
     `INSERT INTO users (role, name, student_no, email, phone, password_hash, room_id, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -158,7 +172,7 @@ app.use((req, res, next) => {
     fmtDate: (iso) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''),
     fmtPeriod: (p) => new Date(p + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
     stars: (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n)),
-    statusLabel: { vacant: 'Vacant', available: 'Space available', full: 'Full', in_progress: 'In progress' },
+    statusLabel: { vacant: 'Vacant', available: 'Space available', full: 'Full', reserved: 'Reserved', in_progress: 'In progress' },
   });
   next();
 });
@@ -178,7 +192,7 @@ const homeFor = (user) => (user.role === 'admin' ? '/admin' : '/student');
 
 app.get('/', (req, res) => {
   if (!adminExists()) return res.redirect('/setup');
-  res.render('home', { rooms: listRooms() });
+  res.render('home', { rooms: listRooms(), ...showcase(req) });
 });
 
 // One-time setup: the first visitor creates the admin account.
@@ -193,7 +207,7 @@ app.post('/setup', (req, res) => {
   const error = createUser({ role: 'admin', name: str(req.body.name), email, password: String(req.body.password || '') });
   if (error) { flash(res, 'error', error); return res.redirect('/setup'); }
   startSession(res, db.get('SELECT id FROM users WHERE email = ?', email).id);
-  flash(res, 'ok', 'Admin account created. Welcome to Royalty Apartments!');
+  flash(res, 'ok', 'Admin account created.');
   res.redirect('/admin');
 });
 
@@ -208,10 +222,14 @@ app.post('/login', (req, res) => {
     flash(res, 'error', 'Too many failed attempts. Please try again in 15 minutes.');
     return res.redirect('/login');
   }
-  const user = db.get('SELECT * FROM users WHERE email = ?', str(req.body.email));
+  // Students log in with their phone number; an email address also works (admin).
+  const login = str(req.body.login);
+  const user = login.includes('@')
+    ? db.get('SELECT * FROM users WHERE email = ?', login)
+    : db.get(`SELECT * FROM users WHERE phone <> '' AND phone = ?`, normPhone(login));
   if (!user || !checkPassword(String(req.body.password || ''), user.password_hash)) {
     recordFail(req.ip);
-    flash(res, 'error', 'Incorrect email or password.');
+    flash(res, 'error', 'Incorrect phone number or password.');
     return res.redirect('/login');
   }
   startSession(res, user.id);
@@ -227,26 +245,22 @@ app.post('/logout', (req, res) => {
 app.get('/register', (req, res) => {
   if (!adminExists()) return res.redirect('/setup');
   if (req.user) return res.redirect(homeFor(req.user));
-  res.render('register', { rooms: listRooms().filter((r) => r.status !== 'full') });
+  res.render('register');
 });
 
+// Students register with name, phone and email only. The caretaker assigns the room.
 app.post('/register', (req, res) => {
   const email = str(req.body.email);
-  const room_id = int(req.body.room_id);
-  const error = Number.isNaN(room_id)
-    ? 'Please choose a room.'
-    : createUser({
-        role: 'student',
-        name: str(req.body.name),
-        student_no: str(req.body.student_no, 50),
-        email,
-        phone: str(req.body.phone, 30),
-        password: String(req.body.password || ''),
-        room_id,
-      });
+  const error = createUser({
+    role: 'student',
+    name: str(req.body.name),
+    email,
+    phone: normPhone(req.body.phone),
+    password: String(req.body.password || ''),
+  });
   if (error) { flash(res, 'error', error); return res.redirect('/register'); }
   startSession(res, db.get('SELECT id FROM users WHERE email = ?', email).id);
-  flash(res, 'ok', `Welcome! You are registered in Room ${room_id}.`);
+  flash(res, 'ok', 'Your account is ready. The caretaker will assign you a room.');
   res.redirect('/student');
 });
 
@@ -277,13 +291,28 @@ app.get('/uploads/:file', (req, res) => {
   if (req.user.role !== 'admin') {
     const own = db.get(
       `SELECT 1 AS x FROM payments WHERE screenshot = ? AND user_id = ?
-       UNION SELECT 1 FROM problems WHERE photo = ? AND user_id = ?`,
-      file, req.user.id, file, req.user.id
+       UNION SELECT 1 FROM problems WHERE photo = ? AND user_id = ?
+       UNION SELECT 1 FROM users WHERE photo = ? AND id = ?`,
+      file, req.user.id, file, req.user.id, file, req.user.id
     );
     if (!own) return res.status(403).end();
   }
   res.set('X-Content-Type-Options', 'nosniff');
   res.sendFile(path.join(UPLOAD_DIR, file), (err) => { if (err && !res.headersSent) res.status(404).end(); });
+});
+
+// Apartment photos on the homepage are public.
+app.get('/photos/:file', (req, res) => {
+  const file = path.basename(req.params.file);
+  if (!db.get('SELECT 1 AS x FROM photos WHERE file = ?', file)) return res.status(404).end();
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.sendFile(path.join(UPLOAD_DIR, file), (err) => { if (err && !res.headersSent) res.status(404).end(); });
+});
+
+// Photos and services shown on the public and student homepages.
+const showcase = (req) => ({
+  photos: db.all('SELECT * FROM photos ORDER BY id'),
+  services: (req.settings.services || '').split('\n').map((s) => s.trim()).filter(Boolean),
 });
 
 // ---------- student ----------
@@ -294,14 +323,26 @@ const roommatesOf = (user) =>
     : [];
 
 app.get('/student', student, (req, res) => {
+  res.render('student/home', { ...showcase(req) });
+});
+
+app.get('/student/room', student, (req, res) => {
   const u = req.user;
   res.render('student/dashboard', {
     room: u.room_id ? getRoom(u.room_id) : null,
     roommates: roommatesOf(u),
-    payments: db.all('SELECT * FROM payments WHERE user_id = ? ORDER BY id DESC LIMIT 3', u.id),
     openProblems: db.get(`SELECT COUNT(*) AS n FROM problems WHERE user_id = ? AND status <> 'resolved'`, u.id).n,
-    myRating: db.get('SELECT AVG(stars) AS avg, COUNT(*) AS n FROM ratings WHERE ratee_id = ?', u.id),
   });
+});
+
+app.post('/student/photo', student, imageUpload('photo', '/student/room'), (req, res) => {
+  if (!req.file) flash(res, 'error', 'Please choose a picture to upload.');
+  else {
+    db.run('UPDATE users SET photo = ? WHERE id = ?', req.file.filename, req.user.id);
+    deleteUpload(req.user.photo);
+    flash(res, 'ok', 'Profile picture updated.');
+  }
+  res.redirect('/student/room');
 });
 
 app.get('/student/payments', student, (req, res) => {
@@ -400,7 +441,7 @@ app.get('/admin', admin, (req, res) => {
     stats: {
       vacant: rooms.filter((r) => r.status === 'vacant').length,
       students: rooms.reduce((n, r) => n + r.occupants, 0),
-      beds: rooms.reduce((n, r) => n + r.capacity, 0),
+      beds: rooms.reduce((n, r) => n + (r.status === 'reserved' ? 0 : r.capacity), 0),
       pendingPayments: db.get(`SELECT COUNT(*) AS n FROM payments WHERE status = 'pending'`).n,
       openProblems: db.get(`SELECT COUNT(*) AS n FROM problems WHERE status <> 'resolved'`).n,
       collected: db.get(`SELECT COALESCE(SUM(amount), 0) AS t FROM payments WHERE status = 'approved' AND period = ?`, now().slice(0, 7)).t,
@@ -421,13 +462,10 @@ app.get('/admin/rooms/:id', admin, (req, res) => {
 app.post('/admin/rooms/:id', admin, (req, res) => {
   const room = getRoom(int(req.params.id));
   if (!room) return res.redirect('/admin');
-  const capacity = int(req.body.capacity);
   const rent = Number(req.body.rent);
-  if (!(capacity >= 1 && capacity <= 10)) flash(res, 'error', 'Capacity must be between 1 and 10.');
-  else if (capacity < room.occupants) flash(res, 'error', `Room ${room.id} has ${room.occupants} occupants. Remove someone before lowering the capacity.`);
-  else if (!(rent >= 0)) flash(res, 'error', 'Please enter a valid rent amount.');
+  if (req.body.rent === '' || !(rent >= 0)) flash(res, 'error', 'Please enter a valid rent amount.');
   else {
-    db.run('UPDATE rooms SET capacity = ?, rent = ? WHERE id = ?', capacity, rent, room.id);
+    db.run('UPDATE rooms SET rent = ? WHERE id = ?', rent, room.id);
     flash(res, 'ok', `Room ${room.id} updated.`);
   }
   res.redirect(`/admin/rooms/${room.id}`);
@@ -443,7 +481,7 @@ app.post('/admin/rooms/:id/vacate', admin, (req, res) => {
 app.post('/admin/rooms/:id/assign', admin, (req, res) => {
   const id = int(req.params.id);
   const userId = int(req.body.user_id);
-  if (!roomHasSpace(id)) flash(res, 'error', 'That room is full.');
+  if (!roomHasSpace(id)) flash(res, 'error', 'That room is full or reserved.');
   else {
     const { changes } = db.run(`UPDATE users SET room_id = ? WHERE id = ? AND role = 'student'`, id, userId);
     flash(res, changes ? 'ok' : 'error', changes ? 'Student added to the room.' : 'Please choose a student.');
@@ -464,7 +502,7 @@ app.get('/admin/students', admin, (req, res) => {
       `SELECT u.*, (SELECT AVG(stars) FROM ratings r WHERE r.ratee_id = u.id) AS avg_rating
        FROM users u WHERE u.role = 'student' ORDER BY u.room_id IS NULL, u.room_id, u.name`
     ),
-    rooms: listRooms().filter((r) => r.status !== 'full'),
+    rooms: listRooms().filter(isOpen),
   });
 });
 
@@ -475,7 +513,7 @@ app.post('/admin/students', admin, (req, res) => {
     name: str(req.body.name),
     student_no: str(req.body.student_no, 50),
     email: str(req.body.email),
-    phone: str(req.body.phone, 30),
+    phone: normPhone(req.body.phone),
     password: String(req.body.password || ''),
     room_id,
   });
@@ -490,7 +528,7 @@ app.get('/admin/students/:id', admin, (req, res) => {
   if (!s) return res.status(404).render('message', { title: 'Not found', text: 'That student does not exist.' });
   res.render('admin/student_edit', {
     s,
-    rooms: listRooms().filter((r) => r.status !== 'full' || r.id === s.room_id),
+    rooms: listRooms().filter((r) => isOpen(r) || r.id === s.room_id),
   });
 });
 
@@ -501,17 +539,20 @@ app.post('/admin/students/:id', admin, (req, res) => {
   const email = str(req.body.email);
   const room_id = req.body.room_id ? int(req.body.room_id) : null;
   const password = String(req.body.password || '');
+  const phone = normPhone(req.body.phone);
   let error = null;
   if (!name) error = 'Please enter a full name.';
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) error = 'Please enter a valid email address.';
   else if (db.get('SELECT 1 AS x FROM users WHERE email = ? AND id <> ?', email, s.id)) error = 'That email address is used by another account.';
-  else if (room_id !== null && room_id !== s.room_id && !roomHasSpace(room_id)) error = 'That room is full or does not exist.';
+  else if (!validPhone(phone)) error = 'Please enter a valid phone number (students log in with it).';
+  else if (db.get('SELECT 1 AS x FROM users WHERE phone = ? AND id <> ?', phone, s.id)) error = 'That phone number is used by another account.';
+  else if (room_id !== null && room_id !== s.room_id && !roomHasSpace(room_id)) error = 'That room is full or not available.';
   else if (password && password.length < 6) error = 'Password must be at least 6 characters.';
 
   if (error) { flash(res, 'error', error); return res.redirect(`/admin/students/${s.id}`); }
   db.run(
     'UPDATE users SET name = ?, student_no = ?, email = ?, phone = ?, room_id = ? WHERE id = ?',
-    name, str(req.body.student_no, 50), email.toLowerCase(), str(req.body.phone, 30), room_id, s.id
+    name, str(req.body.student_no, 50), email.toLowerCase(), phone, room_id, s.id
   );
   if (password) {
     db.run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(password), s.id);
@@ -530,6 +571,7 @@ app.post('/admin/students/:id/delete', admin, (req, res) => {
     );
     db.run('DELETE FROM users WHERE id = ?', s.id);
     files.forEach((row) => deleteUpload(row.f));
+    deleteUpload(s.photo);
     flash(res, 'ok', `${s.name}'s account was deleted.`);
   }
   res.redirect('/admin/students');
@@ -595,7 +637,28 @@ app.get('/admin/ratings', admin, (req, res) => {
   });
 });
 
-app.get('/admin/settings', admin, (req, res) => res.render('admin/settings'));
+app.get('/admin/settings', admin, (req, res) => {
+  res.render('admin/settings', { photos: db.all('SELECT * FROM photos ORDER BY id') });
+});
+
+app.post('/admin/photos', admin, imageUpload('photo', '/admin/settings'), (req, res) => {
+  if (!req.file) flash(res, 'error', 'Please choose a photo to upload.');
+  else {
+    db.run('INSERT INTO photos (file, caption, created_at) VALUES (?, ?, ?)', req.file.filename, str(req.body.caption, 80), now());
+    flash(res, 'ok', 'Photo added to the homepage.');
+  }
+  res.redirect('/admin/settings');
+});
+
+app.post('/admin/photos/:id/delete', admin, (req, res) => {
+  const photo = db.get('SELECT * FROM photos WHERE id = ?', int(req.params.id));
+  if (photo) {
+    db.run('DELETE FROM photos WHERE id = ?', photo.id);
+    deleteUpload(photo.file);
+    flash(res, 'ok', 'Photo removed.');
+  }
+  res.redirect('/admin/settings');
+});
 
 app.post('/admin/settings', admin, (req, res) => {
   const currency = str(req.body.currency, 5);
@@ -603,6 +666,8 @@ app.post('/admin/settings', admin, (req, res) => {
   else {
     db.run(`UPDATE settings SET value = ? WHERE key = 'currency'`, currency);
     db.run(`UPDATE settings SET value = ? WHERE key = 'payment_instructions'`, str(req.body.payment_instructions, 1000));
+    db.run(`UPDATE settings SET value = ? WHERE key = 'welcome_message'`, str(req.body.welcome_message, 300));
+    db.run(`UPDATE settings SET value = ? WHERE key = 'services'`, str(req.body.services, 2000).replace(/\r/g, ''));
     flash(res, 'ok', 'Settings saved.');
   }
   res.redirect('/admin/settings');

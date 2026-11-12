@@ -1,0 +1,16 @@
+<%- include('../partials/head', { title: 'Home' }) %>
+<section class="hero">
+  <h1>Welcome, <%= user.name.split(' ')[0] %>!</h1>
+  <p><%= settings.welcome_message || 'Welcome to Royalty Apartments.' %></p>
+  <p>
+    <% if (user.room_id) { %>You are staying in <b>Room <%= user.room_id %></b>.
+    <% } else { %>You have not been assigned a room yet. The caretaker will place you in one soon.<% } %>
+  </p>
+  <div class="actions">
+    <a class="btn gold" href="/student/room">My room</a>
+    <a class="btn ghost" href="/student/payments">Make a payment</a>
+  </div>
+</section>
+
+<%- include('../partials/showcase') %>
+<%- include('../partials/foot') %>

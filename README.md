@@ -15,9 +15,11 @@ Needs Node.js 22.5 or newer (uses the built-in SQLite). Set `PORT` to change the
 
 ## What it does
 
-**Students** register for a room with free beds, submit rent payments with a screenshot, report room problems (with an optional photo) and rate their roommates out of 5 stars.
+**Students** register with their name, phone number, email and a password, then log in with their phone number. The caretaker (admin) assigns their room. They get a welcome homepage with apartment photos and services, a My room page with their profile picture, and can submit rent payments (screenshot required), report room problems (with an optional photo) and rate their roommates out of 5 stars.
 
-**Admin** sees all 24 rooms at a glance, edits occupants (add, move, remove, edit details, reset passwords), approves or rejects payments after viewing the screenshot, tracks problem reports, sees roommate ratings, and sets beds/rent per room plus the payment instructions students see.
+**Admin** sees all 24 rooms at a glance, edits occupants (add, move, remove, edit details, reset passwords), approves or rejects payments after viewing the screenshot, tracks problem reports, sees roommate ratings, and sets the rent per room plus the payment instructions students see. In Settings the admin also uploads the homepage photos and edits the welcome message and list of services.
+
+Bedspaces per room are fixed in `db.js`: Room 2 has 4, Room 4 has 3 and every other room has 2. Room 1 is **Reserved** (not available to students); change `RESERVED_ROOMS` in `db.js` to alter that.
 
 A room shows as **Vacant** automatically when nobody is registered in it. The admin can also empty a room with **Mark vacant** on the room's page.
 
