@@ -3,6 +3,16 @@
 // iPhones and iPads have no install button in the browser, so they get short instructions instead.
 (function () {
   if ('serviceWorker' in navigator) {
+    // When a newer service worker takes over a page that an older one was already serving, reload
+    // once, so the page is redrawn with files from the new one. Without this, the first visit after
+    // an update could still show old styles or scripts (that is what left the admin dashboard blank).
+    var hadWorker = !!navigator.serviceWorker.controller;
+    var reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadWorker || reloaded) return;
+      reloaded = true;
+      location.reload();
+    });
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js').catch(function () { /* app features unavailable, site still works */ });
     });

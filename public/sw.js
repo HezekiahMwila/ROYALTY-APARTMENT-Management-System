@@ -2,11 +2,14 @@
 //
 // - Pages always come fresh from the server, so rooms, payments and logins are never out of date,
 //   and nobody's private pages are kept on the phone. With no connection, the offline page shows.
-// - The look of the app (styles, scripts, logo, icons, built-in photos) is kept on the phone so the
-//   app opens quickly, and is refreshed in the background each time it is used.
+// - Styles, scripts, the logo, icons and built-in photos also come fresh from the server whenever
+//   there is a connection, so a page and the files it needs are always the same version. A copy of
+//   each is kept on the phone, but it is only used when there is no connection.
+//   (Version 2 answered from the stored copy first, so the first visit after an update could pair
+//   a new page with an old script, which left the admin dashboard blank.)
 //
-// Change VERSION whenever this file changes, so phones replace the old copy.
-const VERSION = 'v2';
+// Change VERSION whenever this file changes, so phones replace the old copy and delete old files.
+const VERSION = 'v3';
 const SHELL = `royalty-shell-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE = [
@@ -14,9 +17,6 @@ const PRECACHE = [
   '/favicon.svg',
   '/logo.svg',
   '/icon-192.png?v=2',
-  '/style.css',
-  '/theme.js',
-  '/ui.js',
 ];
 // Only these kinds of public files are kept on the phone. Uploaded payment screenshots,
 // problem photos and profile pictures (/uploads/) are private and are never stored.
@@ -48,24 +48,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Public files: answer from the phone straight away, and update the stored copy in the background.
+  // Public files: newest from the server, keeping a copy; the stored copy only when offline.
   if (CACHEABLE.test(url.pathname) && !url.pathname.startsWith('/uploads/') && url.pathname !== '/sw.js') {
     event.respondWith(
-      caches.open(SHELL).then((cache) =>
-        cache.match(req).then((stored) => {
-          const fresh = fetch(req)
-            .then((res) => {
-              if (res.ok && res.type === 'basic') cache.put(req, res.clone());
-              return res;
-            })
-            .catch(() => stored);
-          if (stored) {
-            event.waitUntil(fresh.catch(() => {}));
-            return stored;
+      fetch(req)
+        .then((res) => {
+          if (res.ok && res.type === 'basic') {
+            const copy = res.clone();
+            event.waitUntil(caches.open(SHELL).then((cache) => cache.put(req, copy)));
           }
-          return fresh;
+          return res;
         })
-      )
+        .catch(() => caches.match(req).then((stored) => stored || Response.error()))
     );
   }
 });
