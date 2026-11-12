@@ -11,7 +11,13 @@ npm start
 
 Then open http://localhost:3000. The first visit shows a one-time setup page where you create the admin account.
 
-Needs Node.js 22.5 or newer (uses the built-in SQLite). Set `PORT` to change the port.
+Needs Node.js 22.13 or newer (uses the built-in SQLite). Set `PORT` to change the port.
+
+## Hosting on Render
+
+`render.yaml` sets the site up on Render's **free plan**, which is for demos only: every restart or update empties the database and the uploaded screenshots, and the site sleeps after 15 minutes without visitors. The file explains how to switch to a paid plan with a permanent disk.
+
+Online, the first-time setup page is switched off so a stranger cannot claim the admin account. The admin is created from the `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `ADMIN_NAME` settings in Render instead.
 
 ## What it does
 

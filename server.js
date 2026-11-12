@@ -17,7 +17,13 @@ const PAY_METHODS = ['Mobile Money', 'Bank Transfer', 'Cash Deposit'];
 const PROBLEM_CATEGORIES = ['Plumbing', 'Electrical', 'Furniture', 'Door / Lock', 'Cleanliness', 'Pests', 'Other'];
 const PROBLEM_STATUSES = ['open', 'in_progress', 'resolved'];
 
+// Hosted on Render (it sets RENDER=true): the site sits behind Render's proxy, which handles
+// HTTPS. Trusting it gives each visitor's real address (for the failed-login limit) and https
+// links (for the room QR codes).
+const ON_RENDER = !!process.env.RENDER;
+
 const app = express();
+if (ON_RENDER) app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 // The app's service worker must never be cached by the browser, or phones would keep running
@@ -238,13 +244,18 @@ app.get('/', (req, res) => {
 });
 
 // One-time setup: the first visitor creates the admin account.
+// Online this page is switched off, because a stranger could reach it first; the admin account
+// comes from the ADMIN_EMAIL and ADMIN_PASSWORD settings instead (see ensureAdminFromSettings).
+const SETUP_OFF_TEXT = 'The admin account for this site is set in Render, not here. In the Render dashboard, open the service, go to Environment, set ADMIN_EMAIL and ADMIN_PASSWORD, and save. The site restarts with that admin account.';
 app.get('/setup', (req, res) => {
   if (adminExists()) return res.redirect('/login');
+  if (ON_RENDER) return res.status(503).render('message', { title: 'Admin account not set up', text: SETUP_OFF_TEXT });
   res.render('setup');
 });
 
 app.post('/setup', (req, res) => {
   if (adminExists()) return res.redirect('/login');
+  if (ON_RENDER) return res.status(403).render('message', { title: 'Admin account not set up', text: SETUP_OFF_TEXT });
   const email = str(req.body.email);
   const error = createUser({ role: 'admin', name: str(req.body.name), email, password: String(req.body.password || '') });
   if (error) { flash(res, 'error', error); return res.redirect('/setup'); }
@@ -802,4 +813,17 @@ app.use((err, req, res, next) => {
   res.status(500).render('message', { title: 'Something went wrong', text: 'Please try again in a moment.' });
 });
 
-app.listen(PORT, () => console.log(`Royalty Apartments running at http://localhost:${PORT}`));
+// Create the admin account from the ADMIN_EMAIL / ADMIN_PASSWORD settings when there is none yet.
+// On Render's free plan the database starts empty after every restart or update, so this puts the
+// admin account back each time. It never changes an admin account that already exists.
+function ensureAdminFromSettings() {
+  const email = str(process.env.ADMIN_EMAIL);
+  const password = String(process.env.ADMIN_PASSWORD || '');
+  if (adminExists() || !email || !password) return;
+  const error = createUser({ role: 'admin', name: str(process.env.ADMIN_NAME) || 'Caretaker', email, password });
+  console.log(error ? `Admin account not created from settings: ${error}` : `Admin account created for ${email}.`);
+}
+ensureAdminFromSettings();
+if (ON_RENDER && !adminExists()) console.log('No admin account yet: set ADMIN_EMAIL and ADMIN_PASSWORD in Render.');
+
+app.listen(PORT, () => console.log(`Royalty Apartments running on port ${PORT}`));

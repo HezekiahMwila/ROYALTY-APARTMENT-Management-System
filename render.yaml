@@ -1,0 +1,38 @@
+# Render Blueprint for Royalty Apartments (https://render.com/docs/blueprint-spec).
+# In Render: New > Blueprint, pick this GitHub repository, and fill in the values it asks for.
+#
+# FREE PLAN = DEMO ONLY. The free plan has no permanent disk, so every restart or update starts
+# with an empty database: students, payments and uploaded screenshots are lost. The admin account
+# is recreated each time from ADMIN_EMAIL / ADMIN_PASSWORD. The site also sleeps after 15 minutes
+# without visitors; the next visit then takes about a minute to wake it.
+#
+# To keep data for real use: change "plan" to "starter" and remove the # in front of the
+# "disk" lines below (a disk needs a paid plan).
+services:
+  - type: web
+    name: royalty-apartments
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    autoDeploy: true
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # Render asks for these three when the Blueprint is created. They are kept in Render only.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      # Uncomment together with the disk below:
+      # - key: DATA_DIR
+      #   value: /var/data
+    # disk:
+    #   name: royalty-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
