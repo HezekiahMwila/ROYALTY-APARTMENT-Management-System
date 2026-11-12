@@ -198,6 +198,8 @@ app.use((req, res, next) => {
     fmtPeriod: (p) => new Date(p + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
     stars: (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n)),
     statusLabel: { vacant: 'Vacant', available: 'Space available', full: 'Full', reserved: 'Reserved', in_progress: 'In progress' },
+    // Address of the n-th apartment picture, for pages that use one as a background.
+    photo: (n) => { const all = sitePhotos(); return all[n % all.length].src; },
   });
   next();
 });
@@ -372,9 +374,19 @@ app.get('/photos/:file', (req, res) => {
   res.sendFile(path.join(UPLOAD_DIR, file), (err) => { if (err && !res.headersSent) res.status(404).end(); });
 });
 
+// The apartment pictures used across the site: the ones the caretaker uploaded in Settings,
+// or, until there are any, the built-in pictures in public/slides.
+const BUILT_IN_SLIDES = ['Upper-floor balcony', 'Upper-floor rooms', 'Stairs to the courtyard', 'Ground-floor rooms'];
+function sitePhotos() {
+  const uploaded = db.all('SELECT file, caption FROM photos ORDER BY id');
+  return uploaded.length
+    ? uploaded.map((p) => ({ src: `/photos/${p.file}`, caption: p.caption }))
+    : BUILT_IN_SLIDES.map((caption, i) => ({ src: `/slides/slide-${i + 1}.jpg`, caption }));
+}
+
 // Photos and services shown on the public and student homepages.
 const showcase = (req) => ({
-  photos: db.all('SELECT * FROM photos ORDER BY id'),
+  slides: sitePhotos(),
   services: (req.settings.services || '').split('\n').map((s) => s.trim()).filter(Boolean),
 });
 

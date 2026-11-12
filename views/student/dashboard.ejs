@@ -29,10 +29,13 @@
   <% } else { %>
     <div class="checkin"><b>You have not checked in yet.</b> Ask the caretaker to show you the Room <%= room.id %> QR code, then <a href="/student/scan">scan it to check in</a>.</div>
   <% } %>
-  <div class="stats">
-    <div class="stat"><b>Room <%= room.id %></b><span>Room number</span></div>
-    <div class="stat"><b><%= room.rent > 0 ? money(room.rent) : '—' %></b><span>Monthly rent</span></div>
-    <a class="stat" href="/student/problems"><b><%= openProblems %></b><span>Open problem reports</span></a>
+  <div class="banner" style="background-image:url('<%= photo(0) %>')">
+    <div class="banner-head"><h2>My room</h2></div>
+    <div class="stats">
+      <div class="stat"><b>Room <%= room.id %></b><span>Room number</span></div>
+      <div class="stat"><b><%= room.rent > 0 ? money(room.rent) : '—' %></b><span>Monthly rent</span></div>
+      <a class="stat" href="/student/problems"><b><%= openProblems %></b><span>Open problem reports</span></a>
+    </div>
   </div>
 
   <div class="card">

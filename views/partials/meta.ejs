@@ -1,0 +1,16 @@
+<%# Shared <head> contents for every page. %>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Royalty Apartments</title>
+  <meta name="theme-color" content="#3554d1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script>
+    // Apply the saved theme before the page is drawn, so it never flashes the wrong one.
+    // Dark is the default until the visitor picks light.
+    (function () {
+      var theme = 'dark';
+      try { if (localStorage.getItem('theme') === 'light') theme = 'light'; } catch (e) {}
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="/style.css">

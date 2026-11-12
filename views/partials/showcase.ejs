@@ -1,62 +1,58 @@
-<%# Apartment slideshow and services, shown on the public and student homepages. %>
-<%
-  // The slideshow shows these pictures of Royalty Apartments (in public/slides) until the
-  // caretaker uploads photos in Settings; uploaded photos then take their place.
-  const DEFAULT_SLIDES = ['Entrance and parking', 'Shaded sitting area', 'Outdoor lounge', 'Bedroom', 'Washing area'];
-  const slides = photos.length
-    ? photos.map(p => ({ src: `/photos/${p.file}`, caption: p.caption }))
-    : DEFAULT_SLIDES.map((caption, i) => ({ src: `/slides/slide-${i + 1}.jpg`, caption }));
-%>
-<section class="section">
-  <h2>Our apartments</h2>
-  <div class="slideshow" data-slideshow aria-roledescription="carousel" aria-label="Photos of Royalty Apartments">
-    <div class="slides">
-      <% slides.forEach((s, i) => { %>
-        <figure class="slide <%= i === 0 ? 'on' : '' %>" aria-hidden="<%= i === 0 ? 'false' : 'true' %>">
-          <%# A blurred copy fills the frame behind the picture, so upright photos are shown whole instead of cropped. %>
-          <div class="slide-bg" style="background-image:url('<%= s.src %>')" aria-hidden="true"></div>
-          <img src="<%= s.src %>" alt="<%= s.caption || 'Royalty Apartments' %>">
-          <% if (s.caption) { %><figcaption><%= s.caption %></figcaption><% } %>
-        </figure>
-      <% }) %>
-    </div>
-    <% if (slides.length > 1) { %>
-      <button class="slide-btn prev" type="button" aria-label="Previous picture">‹</button>
-      <button class="slide-btn next" type="button" aria-label="Next picture">›</button>
-      <div class="slide-dots">
-        <% slides.forEach((s, i) => { %><button type="button" class="<%= i === 0 ? 'on' : '' %>" aria-label="Show picture <%= i + 1 %>"></button><% }) %>
-      </div>
-    <% } %>
-  </div>
-</section>
+<%# Apartment pictures and services, shown on the public and student homepages.
+    The pictures fill the whole browser window behind the page and change by themselves. %>
+<div class="backdrop" data-slideshow aria-hidden="true">
+  <% slides.forEach((s, i) => { %>
+    <figure class="slide <%= i === 0 ? 'on' : '' %>"><img src="<%= s.src %>" alt=""></figure>
+  <% }) %>
+</div>
 
+<% const many = slides.length > 1; %>
+<% if (many || slides[0].caption) { %>
+<div class="slide-ctrl <%= many ? '' : 'solo' %>" role="group" aria-label="Apartment pictures">
+  <% if (many) { %>
+    <button class="slide-btn prev" type="button" aria-label="Previous picture">‹</button>
+    <div class="slide-dots">
+      <% slides.forEach((s, i) => { %><button type="button" class="<%= i === 0 ? 'on' : '' %>" aria-label="Show picture <%= i + 1 %> of <%= slides.length %>"></button><% }) %>
+    </div>
+    <button class="slide-btn next" type="button" aria-label="Next picture">›</button>
+  <% } %>
+  <span class="slide-caption" aria-live="polite"><%= slides[0].caption %></span>
+</div>
+<% } %>
+
+<% if (many) { %>
 <script>
-  // Slideshow: changes picture every 2 seconds, pauses while the pointer or keyboard focus is on it.
-  document.querySelectorAll('[data-slideshow]').forEach((box) => {
-    const slides = [...box.querySelectorAll('.slide')];
-    const dots = [...box.querySelectorAll('.slide-dots button')];
-    if (slides.length < 2) return;
-    let current = 0, timer = null;
-    const show = (n) => {
+  // Background slideshow: a new picture every 5 seconds. It pauses while the pointer or
+  // keyboard focus is on the controls, and does not auto-play if the visitor prefers less motion.
+  (function () {
+    var slides = [].slice.call(document.querySelectorAll('.backdrop .slide'));
+    var ctrl = document.querySelector('.slide-ctrl');
+    var dots = [].slice.call(ctrl.querySelectorAll('.slide-dots button'));
+    var caption = ctrl.querySelector('.slide-caption');
+    var captions = <%- JSON.stringify(slides.map(s => s.caption || '')).replace(/</g, '\\u003c') %>;
+    var current = 0, timer = null;
+    function show(n) {
       current = (n + slides.length) % slides.length;
-      slides.forEach((s, i) => { s.classList.toggle('on', i === current); s.setAttribute('aria-hidden', i !== current); });
-      dots.forEach((d, i) => d.classList.toggle('on', i === current));
-    };
-    const stop = () => { clearInterval(timer); timer = null; };
-    const start = () => {
+      slides.forEach(function (s, i) { s.classList.toggle('on', i === current); });
+      dots.forEach(function (d, i) { d.classList.toggle('on', i === current); });
+      caption.textContent = captions[current];
+    }
+    function stop() { clearInterval(timer); timer = null; }
+    function start() {
       if (timer || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      timer = setInterval(() => show(current + 1), 2000);
-    };
-    box.querySelector('.prev').addEventListener('click', () => show(current - 1));
-    box.querySelector('.next').addEventListener('click', () => show(current + 1));
-    dots.forEach((d, i) => d.addEventListener('click', () => show(i)));
-    box.addEventListener('mouseenter', stop);
-    box.addEventListener('mouseleave', start);
-    box.addEventListener('focusin', stop);
-    box.addEventListener('focusout', start);
+      timer = setInterval(function () { show(current + 1); }, 5000);
+    }
+    ctrl.querySelector('.prev').addEventListener('click', function () { show(current - 1); });
+    ctrl.querySelector('.next').addEventListener('click', function () { show(current + 1); });
+    dots.forEach(function (d, i) { d.addEventListener('click', function () { show(i); }); });
+    ctrl.addEventListener('mouseenter', stop);
+    ctrl.addEventListener('mouseleave', start);
+    ctrl.addEventListener('focusin', stop);
+    ctrl.addEventListener('focusout', start);
     start();
-  });
+  })();
 </script>
+<% } %>
 
 <% if (services.length) { %>
 <section class="section">

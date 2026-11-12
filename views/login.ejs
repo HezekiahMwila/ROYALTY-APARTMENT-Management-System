@@ -1,15 +1,12 @@
-<%- include('partials/head', { title: 'Log in' }) %>
-<div class="card narrow">
-  <img class="card-logo" src="/logo.svg" alt="" width="145" height="80">
-  <h1>Log in</h1>
-  <p class="muted">Students log in with their phone number.</p>
-  <form method="post" action="/login">
-    <label for="login">Phone number <span class="opt">(admin: email)</span></label>
-    <input id="login" name="login" autocomplete="username" required autofocus>
-    <label for="password">Password</label>
-    <input id="password" name="password" type="password" autocomplete="current-password" required>
-    <button class="btn" type="submit">Log in</button>
-  </form>
-  <p class="small muted" style="margin-top:16px">New student? <a href="/register">Create an account</a></p>
-</div>
-<%- include('partials/foot') %>
+<%- include('partials/auth_head', { title: 'Log in' }) %>
+<h1>Log in</h1>
+<p class="muted">Students log in with their phone number.</p>
+<form method="post" action="/login">
+  <label for="login">Phone number <span class="opt">(admin: email)</span></label>
+  <input id="login" name="login" autocomplete="username" required autofocus>
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" autocomplete="current-password" required>
+  <button class="btn" type="submit">Log in</button>
+</form>
+<p class="small muted" style="margin:16px 0 0">New student? <a href="/register">Create an account</a></p>
+<%- include('partials/auth_foot') %>
