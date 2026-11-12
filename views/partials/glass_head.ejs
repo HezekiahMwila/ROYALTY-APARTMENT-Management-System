@@ -1,0 +1,26 @@
+<%# Top of the glass sign-in pages (log in, create account): a frosted-glass panel over one of
+    the apartment photos. Pass title (browser tab), heading and sub (the line under the heading).
+    Styles are in /auth.css, small behaviours in /auth.js. Close with partials/glass_foot. %>
+<!doctype html>
+<html lang="en">
+<head>
+<%- include('meta', { title }) %>
+  <link rel="stylesheet" href="/auth.css">
+</head>
+<body class="lg" style="--lg-photo: url('<%= photo(1) %>')">
+
+<button class="lg-theme" type="button" data-theme-toggle aria-pressed="true" aria-label="Dark mode" title="Switch between light and dark mode">
+  <svg class="lg-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5Z"/></svg>
+  <svg class="lg-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3 7 7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7"/></svg>
+</button>
+
+<%# A page that is given slides (the apartment pictures) shows them, with the services, beside the form. %>
+<% const side = !!(locals.slides && slides.length); %>
+<main class="lg-main">
+  <section class="lg-panel<%= side ? ' lg-split' : '' %>">
+<% if (side) { %><%- include('glass_side') %><% } %>
+    <div class="lg-form">
+    <h1><%= heading %></h1>
+    <p class="lg-sub"><%= sub %></p>
+
+    <% if (flash) { %><div class="lg-flash <%= flash.type === 'ok' ? 'ok' : 'error' %>" role="<%= flash.type === 'ok' ? 'status' : 'alert' %>"><%= flash.text %></div><% } %>

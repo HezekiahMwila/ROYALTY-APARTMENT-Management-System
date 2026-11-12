@@ -1,16 +1,28 @@
-<%- include('partials/auth_head', { title: 'Register' }) %>
-<h1>Create your account</h1>
-<p class="muted">The caretaker will assign you a room after you register.</p>
-<form method="post" action="/register">
-  <label for="name">Full name</label>
-  <input id="name" name="name" autocomplete="name" required autofocus>
-  <label for="phone">Phone number <span class="opt">(you will log in with this)</span></label>
-  <input id="phone" name="phone" type="tel" autocomplete="tel" required>
-  <label for="email">Email</label>
-  <input id="email" name="email" type="email" autocomplete="email" required>
-  <label for="password">Password <span class="opt">(at least 6 characters)</span></label>
-  <input id="password" name="password" type="password" autocomplete="new-password" minlength="6" required>
-  <button class="btn" type="submit">Create my account</button>
-</form>
-<p class="small muted" style="margin:16px 0 0">Already registered? <a href="/login">Log in</a></p>
-<%- include('partials/auth_foot') %>
+<%- include('partials/glass_head', { title: 'Register', heading: 'Sign up', sub: 'Create your account. The caretaker will assign your room.' }) %>
+    <form method="post" action="/register">
+      <label class="lg-sr" for="name">Full name</label>
+      <div class="lg-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4.2"/><path d="M3.8 20.5c.5-4.300 3.900-6.800 8.200-6.800s7.700 2.500 8.200 6.800c.05.5-.3.900-.8.900H4.600c-.5 0-.85-.4-.8-.9Z"/></svg>
+        <input id="name" name="name" placeholder="Full name" autocomplete="name" required autofocus>
+      </div>
+
+      <label class="lg-sr" for="phone">Phone number (you will log in with this)</label>
+      <div class="lg-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3h2.400c.5 0 .9.300 1 .8l.9 3.500c.1.400 0 .8-.3 1.100L8.900 10.100a12 12 0 0 0 5 5l1.700-1.700c.3-.3.7-.4 1.100-.3l3.500.9c.5.100.8.5.8 1v2.400c0 1.500-1.200 2.600-2.700 2.600C10.500 20 4 13.500 4 5.700 4 4.200 5.100 3 6.600 3Z"/></svg>
+        <input id="phone" name="phone" type="tel" placeholder="Phone number" autocomplete="tel" aria-describedby="phone-hint" required>
+      </div>
+      <p class="lg-hint" id="phone-hint">You will log in with this number.</p>
+
+      <label class="lg-sr" for="email">Email</label>
+      <div class="lg-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.200C3 6 4 5 5.200 5h13.600C20 5 21 6 21 7.200v.2l-9 5.400-9-5.400v-.2Zm0 2.500v7.100C3 18 4 19 5.200 19h13.600c1.200 0 2.200-1 2.200-2.200V9.700l-8.500 5.100a1 1 0 0 1-1 0L3 9.700Z"/></svg>
+        <input id="email" name="email" type="email" placeholder="Email" autocomplete="email" autocapitalize="none" spellcheck="false" required>
+      </div>
+
+<%- include('partials/glass_password', { placeholder: 'Password (6+ characters)', autocomplete: 'new-password', minlength: 6 }) %>
+
+      <button class="lg-btn" type="submit">Create account</button>
+    </form>
+
+    <p class="lg-foot">Already have an account? <a href="/login">Log in</a></p>
+<%- include('partials/glass_foot') %>

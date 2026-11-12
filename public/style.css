@@ -1,102 +1,109 @@
 /* Royalty Apartments
-   Look: frosted "glass" panels over a soft backdrop, puffy "clay" buttons, and a light and a
-   dark theme. Blue and red come from the logo. Every colour is a variable, so the two themes
-   below are the only places colours are chosen. */
+   Look: the same as the log in page. Frosted "glass" panels float over an apartment photo
+   that fills the window, with white text and puffy "clay" buttons. The light theme is a
+   bright photo under pale glass; the dark theme dims the photo and darkens the glass.
+   Blue (#123fdc) and red (#f20d1d) are the exact colours of the logo (logo.svg). Every colour
+   is a variable, so the two themes below are the only places colours are chosen. */
 
 /* ---------- themes ---------- */
 :root {
-  color-scheme: light;
-  --blue: #3554d1;          /* brand fill (buttons, active tab) */
-  --blue-deep: #2740a8;
-  --red: #d92b46;           /* accent fill */
-  --red-deep: #b51f38;
+  /* Text is light in both themes (it sits on glass over a photo), so form controls are asked
+     to draw themselves dark in both. */
+  color-scheme: dark;
+  --blue: #123fdc;          /* brand fill (buttons, active tab) */
+  --blue-deep: #0d2fa8;
+  --red: #f20d1d;           /* accent fill */
+  --red-deep: #b80a16;
   --green-fill: #17794a;
 
-  --bg: #eef0fb;
-  /* Iridescent backdrop: one smooth sweep through pearl colours, with a soft band of sheen. */
-  --iri: linear-gradient(125deg, #fbe4f2 0%, #e7e6ff 20%, #d8f1ff 40%, #dafbee 58%, #fff4d6 77%, #ffe2ec 100%);
-  --iri-sheen: linear-gradient(35deg, transparent 32%, rgba(255, 255, 255, .55) 50%, transparent 68%);
+  --bg: #10132c;            /* behind the photo, and while it loads */
 
-  --ink: #121a2e;
-  --heading: #0c1e4a;
-  --muted: #434d66;
-  --link: #2c49c4;
-  --line: rgba(18, 26, 46, .12);
-  --line-strong: rgba(18, 26, 46, .22);
+  --ink: #ffffff;
+  --heading: #ffffff;
+  --muted: #e6eaf6;
+  --link: #d3dcff;
+  --line: rgba(255, 255, 255, .18);
+  --line-strong: rgba(255, 255, 255, .36);
 
-  --glass: rgba(255, 255, 255, .8);
-  --glass-strong: rgba(255, 255, 255, .82);
-  --glass-border: rgba(255, 255, 255, .8);
-  --glass-photo: rgba(255, 255, 255, .92);   /* glass placed directly on a photo */
-  --tile-edge: rgba(18, 26, 46, .14);
-  --glass-hi: rgba(255, 255, 255, .9);
-  --shadow: 0 8px 28px rgba(22, 40, 100, .12);
-  --shadow-lift: 0 14px 38px rgba(22, 40, 100, .2);
+  --bar: rgba(34, 44, 76, .4);            /* the top bar */
+  /* The logo is shown as it is, with no light outline or glow. Where it sits on a photo it
+     only gets a soft dark shadow underneath (-on); on the top bar it gets nothing. */
+  --logo-edge-on: drop-shadow(0 2px 10px rgba(0, 0, 0, .4));
+  --logo-edge: none;
+  --glass: rgba(34, 44, 76, .36);            /* frosted panels (these blur what is behind them) */
+  --glass-strong: rgba(30, 40, 72, .74);     /* the menu and messages: must read over anything */
+  --glass-solid: rgba(30, 40, 72, .66);      /* small tiles that do not blur */
+  --sheet: rgba(28, 38, 72, .93);            /* the drop-down menu */
+  --glass-border: rgba(255, 255, 255, .45);
+  --glass-photo: rgba(34, 44, 76, .4);       /* glass placed on a banner photo */
+  --tile-edge: rgba(4, 8, 26, .22);
+  --glass-hi: rgba(255, 255, 255, .3);
+  --shadow: 0 14px 34px -14px rgba(4, 8, 26, .55);
+  --shadow-lift: 0 22px 46px -16px rgba(4, 8, 26, .7);
 
-  --field: rgba(255, 255, 255, .78);
-  --field-border: rgba(18, 26, 46, .22);
-  --hover: rgba(53, 84, 209, .07);
+  --field: rgba(255, 255, 255, .14);
+  --field-border: rgba(255, 255, 255, .58);
+  --hover: rgba(255, 255, 255, .08);
 
-  --clay-neutral: #f4f7fe;
-  --clay-neutral-ink: #2c49c4;
+  --clay-neutral: rgba(255, 255, 255, .2);   /* quiet buttons: a pill of clear glass */
+  --clay-neutral-ink: #ffffff;
 
-  --blue-soft: rgba(53, 84, 209, .13);
-  --blue-ink: #2740a8;
-  --red-soft: rgba(217, 43, 70, .12);
-  --red-ink: #b51f38;
-  --green-soft: rgba(23, 121, 74, .14);
-  --green-ink: #126a40;
-  --amber-soft: rgba(217, 154, 0, .18);
-  --amber-ink: #7a5000;
-  --grey-soft: rgba(18, 26, 46, .08);
-  --star: #f2a900;
+  --blue-soft: rgba(120, 146, 255, .3);
+  --blue-ink: #dde4ff;
+  --red-soft: rgba(255, 70, 82, .28);
+  --red-ink: #ffc9cc;
+  --green-soft: rgba(70, 210, 140, .26);
+  --green-ink: #aef2d1;
+  --amber-soft: rgba(255, 190, 70, .26);
+  --amber-ink: #ffe09a;
+  --grey-soft: rgba(255, 255, 255, .15);
+  --star: #ffc531;
 
-  --scrim-top: rgba(8, 14, 34, .16);
-  --scrim-bottom: rgba(8, 14, 34, .5);
+  /* shade laid over the page photo so light text stays readable */
+  --scrim-top: rgba(8, 14, 40, .34);
+  --scrim-bottom: rgba(8, 14, 40, .56);
   --radius: 18px;
 }
 
 :root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0c1030;
-  --iri: linear-gradient(125deg, #180d33 0%, #0d1a3f 22%, #06293c 42%, #101d49 60%, #2b1043 80%, #160a2b 100%);
-  --iri-sheen: linear-gradient(35deg, transparent 32%, rgba(150, 180, 255, .09) 50%, transparent 68%);
+  --bg: #0a0d22;
 
-  --ink: #e9edf8;
-  --heading: #ffffff;
-  --muted: #bcc6df;
-  --link: #9fb2ff;
+  --ink: #eef1fa;
+  --muted: #c3cbe2;
+  --link: #aebcff;
   --line: rgba(255, 255, 255, .12);
-  --line-strong: rgba(255, 255, 255, .24);
+  --line-strong: rgba(255, 255, 255, .26);
 
-  --glass: rgba(16, 22, 46, .76);
-  --glass-strong: rgba(14, 20, 42, .82);
-  --glass-border: rgba(255, 255, 255, .14);
-  --glass-photo: rgba(10, 15, 34, .82);
-  --tile-edge: rgba(255, 255, 255, .2);
-  --glass-hi: rgba(255, 255, 255, .10);
-  --shadow: 0 8px 28px rgba(0, 0, 0, .45);
-  --shadow-lift: 0 14px 38px rgba(0, 0, 0, .6);
+  --bar: rgba(8, 12, 30, .6);
+  --glass: rgba(8, 12, 30, .56);
+  --glass-strong: rgba(8, 12, 30, .84);
+  --glass-solid: rgba(10, 14, 34, .78);
+  --sheet: rgba(10, 14, 34, .95);
+  --glass-border: rgba(255, 255, 255, .22);
+  --glass-photo: rgba(8, 12, 30, .6);
+  --tile-edge: rgba(0, 0, 0, .3);
+  --glass-hi: rgba(255, 255, 255, .14);
+  --shadow: 0 14px 34px -14px rgba(0, 0, 0, .7);
+  --shadow-lift: 0 22px 46px -16px rgba(0, 0, 0, .8);
 
-  --field: rgba(8, 13, 28, .6);
-  --field-border: rgba(255, 255, 255, .24);
+  --field: rgba(0, 0, 0, .26);
+  --field-border: rgba(255, 255, 255, .34);
   --hover: rgba(255, 255, 255, .06);
 
-  --clay-neutral: #28335a;
-  --clay-neutral-ink: #dfe6ff;
+  --clay-neutral: rgba(255, 255, 255, .1);
 
   --blue-soft: rgba(120, 146, 255, .2);
   --blue-ink: #b4c3ff;
-  --red-soft: rgba(255, 96, 120, .18);
-  --red-ink: #ff9aaa;
+  --red-soft: rgba(255, 70, 82, .18);
+  --red-ink: #ff9a9f;
   --green-soft: rgba(70, 210, 140, .16);
   --green-ink: #7be0ad;
   --amber-soft: rgba(255, 190, 70, .16);
   --amber-ink: #f5c868;
   --grey-soft: rgba(255, 255, 255, .09);
 
-  --scrim-top: rgba(4, 8, 20, .26);
-  --scrim-bottom: rgba(4, 8, 20, .62);
+  --scrim-top: rgba(5, 8, 22, .6);
+  --scrim-bottom: rgba(5, 8, 22, .8);
 }
 
 /* ---------- base ---------- */
@@ -113,14 +120,15 @@ body {
   background: var(--bg);
   line-height: 1.55;
 }
-/* The iridescent backdrop behind every page. It is still (not animated), so the frosted
-   panels on top of it do not have to be redrawn every frame. */
+/* The backdrop behind every page: an apartment photo (set on <body> as --page-photo, see
+   partials/head.ejs) under a shade. It is still (not animated), so the frosted panels on top
+   of it do not have to be redrawn every frame. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
-  background: var(--iri-sheen), var(--iri), var(--bg);
+  background: linear-gradient(180deg, var(--scrim-top), var(--scrim-bottom)), var(--page-photo, none) center / cover no-repeat, var(--bg);
 }
 a { color: var(--link); }
 h1, h2 { letter-spacing: -.01em; line-height: 1.25; color: var(--heading); }
@@ -139,26 +147,19 @@ p { margin: 0 0 12px; }
   box-shadow: var(--shadow), 0 0 0 1px var(--tile-edge), inset 0 1px 0 var(--glass-hi);
 }
 /* Only the larger panels blur what is behind them. The 24 small room tiles and the filter
-   tabs sit on the soft backdrop, where a blur would change nothing but slow phones down. */
-.card, .stat, .services li, .foot, .slide-ctrl {
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  backdrop-filter: blur(16px) saturate(160%);
+   tabs use a more solid glass instead: that many blurred tiles would slow phones down. */
+.card, .stat, .services li, .foot, .slide-ctrl, .page-head {
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
 }
+.room, .tabs a { background: var(--glass-solid); }
+/* Headings that sit straight on the photo get a soft shadow to stay readable. */
+.wrap > h2, .section > h2 { text-shadow: 0 2px 10px rgba(0, 0, 0, .6); }
 
 /* ---------- header ----------
-   A plain white bar in both themes: menu button on the left, logo in the middle, theme
-   switch on the right. Everything inside it uses light colours, whatever the page theme. */
+   A see-through glass bar that follows the page theme: menu button on the left, logo in the
+   middle, theme switch on the right. The logo has no box, outline or glow behind it. */
 .top {
-  --ink: #121a2e;
-  --heading: #0c1e4a;
-  --muted: #434d66;
-  --link: #2c49c4;
-  --line: rgba(18, 26, 46, .12);
-  --blue-soft: rgba(53, 84, 209, .12);
-  --blue-ink: #2740a8;
-  --red-ink: #b51f38;
-  --clay-neutral: #f1f4fc;
-  --clay-neutral-ink: #2c49c4;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -167,13 +168,15 @@ p { margin: 0 0 12px; }
   align-items: center;
   gap: 12px;
   padding: 0 20px;
-  background: #fff;
+  background: var(--bar);
   color: var(--ink);
-  border-bottom: 1px solid rgba(18, 26, 46, .1);
-  box-shadow: 0 4px 18px rgba(12, 30, 74, .16);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
 }
 .brand { grid-column: 2; display: inline-flex; align-items: center; margin: 6px 0; border-radius: 12px; transition: transform .2s cubic-bezier(.3, 1.6, .5, 1); }
-.brand img { display: block; height: 56px; width: auto; }
+.brand img { display: block; height: 56px; width: auto; filter: var(--logo-edge); }
 .brand:hover { transform: scale(1.04); }
 .brand:active { transform: scale(.97); }
 .top > .theme-toggle { grid-column: 3; justify-self: end; }
@@ -190,14 +193,13 @@ p { margin: 0 0 12px; }
   border-radius: 15px;
   background: var(--clay-neutral);
   cursor: pointer;
-  box-shadow: 0 8px 14px -7px rgba(10, 20, 60, .55), inset 0 -5px 7px rgba(0, 0, 0, .12), inset 0 5px 7px rgba(255, 255, 255, .9);
+  box-shadow: 0 8px 14px -7px rgba(4, 8, 26, .6), inset 0 -5px 7px rgba(0, 0, 0, .18), inset 0 5px 7px rgba(255, 255, 255, .24);
   transition: transform .18s cubic-bezier(.3, 1.6, .5, 1), box-shadow .18s ease, background-color .18s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .menu-btn::-webkit-details-marker { display: none; }
-.menu-btn:hover { transform: translateY(-2px); background: #e6ebfb; }
-.menu-btn:active { transform: translateY(1px) scale(.95); box-shadow: 0 3px 6px -4px rgba(10, 20, 60, .5), inset 0 5px 7px rgba(0, 0, 0, .16), inset 0 -3px 5px rgba(255, 255, 255, .7); }
-.menu[open] .menu-btn { background: var(--blue); box-shadow: 0 8px 14px -7px rgba(53, 84, 209, .8), inset 0 -5px 7px rgba(0, 0, 0, .22), inset 0 5px 7px rgba(255, 255, 255, .3); }
+.menu-btn:hover { transform: translateY(-2px); filter: brightness(1.07) saturate(1.2); }.menu-btn:active { transform: translateY(1px) scale(.95); box-shadow: 0 3px 6px -4px rgba(10, 20, 60, .5), inset 0 5px 7px rgba(0, 0, 0, .16), inset 0 -3px 5px rgba(255, 255, 255, .7); }
+.menu[open] .menu-btn { background: var(--blue); box-shadow: 0 8px 14px -7px rgba(18, 63, 220, .8), inset 0 -5px 7px rgba(0, 0, 0, .22), inset 0 5px 7px rgba(255, 255, 255, .3); }
 .menu-icon { position: relative; display: block; width: 20px; height: 16px; }
 .menu-icon i { position: absolute; left: 0; width: 100%; height: 2.5px; border-radius: 2px; background: var(--clay-neutral-ink); transition: transform .3s cubic-bezier(.5, -.3, .3, 1.4), opacity .2s ease, top .3s ease, background-color .2s ease; }
 .menu-icon i:nth-child(1) { top: 0; }
@@ -210,6 +212,8 @@ p { margin: 0 0 12px; }
 .menu[open] .menu-icon i:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .menu[open] .menu-icon i:nth-child(3) { top: 6.75px; transform: rotate(-45deg); }
 
+/* The drop-down is a sheet of smoked glass, nearly solid so its links read over any page.
+   (It cannot blur what is behind it: it sits inside the top bar, which already does.) */
 .menu-panel {
   position: absolute;
   top: calc(100% + 10px);
@@ -221,10 +225,10 @@ p { margin: 0 0 12px; }
   flex-direction: column;
   gap: 3px;
   padding: 10px;
-  background: #fff;
-  border: 1px solid rgba(18, 26, 46, .1);
+  background: var(--sheet);
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
-  box-shadow: 0 22px 48px rgba(8, 16, 50, .34);
+  box-shadow: 0 22px 48px rgba(4, 8, 26, .6), inset 0 1px 0 var(--glass-hi);
   transform-origin: 24px 0;
   animation: menu-in .26s cubic-bezier(.2, .9, .3, 1.25);
 }
@@ -247,15 +251,16 @@ p { margin: 0 0 12px; }
 .menu-panel a::before { content: ""; position: absolute; left: 7px; top: 50%; width: 4px; height: 0; border-radius: 2px; background: var(--red); transform: translateY(-50%); transition: height .18s ease; }
 .menu-panel a:hover { background: var(--blue-soft); color: var(--blue-ink); padding-left: 22px; }
 .menu-panel a:hover::before { height: 55%; }
-.menu-panel a:active { transform: scale(.97); background: rgba(53, 84, 209, .22); }
-.menu-panel a.on { background: var(--blue); color: #fff; box-shadow: 0 8px 14px -8px rgba(53, 84, 209, .9), inset 0 -4px 6px rgba(0, 0, 0, .2), inset 0 4px 6px rgba(255, 255, 255, .28); }
+.menu-panel a:active { transform: scale(.97); background: rgba(18, 63, 220, .22); }
+.menu-panel a.on { background: var(--blue); color: #fff; box-shadow: 0 8px 14px -8px rgba(18, 63, 220, .9), inset 0 -4px 6px rgba(0, 0, 0, .2), inset 0 4px 6px rgba(255, 255, 255, .28); }
 .menu-panel a.on::before { height: 55%; background: #fff; }
 .menu-panel form { margin: 6px 0 0; padding-top: 9px; border-top: 1px solid var(--line); }
 .menu-panel .logout { width: 100%; }
 
 .wrap { width: 100%; max-width: 1100px; margin: 0 auto; padding: 28px 16px 56px; flex: 1; }
 .narrow { max-width: 440px; margin: 28px auto; }
-.page-head { margin-bottom: 22px; padding-left: 14px; border-left: 4px solid var(--red); }
+/* the page title: its own strip of glass, with the red bar from the logo */
+.page-head { margin-bottom: 22px; padding: 14px 18px; border-left: 4px solid var(--red); border-radius: 6px 16px 16px 6px; background: var(--glass); box-shadow: var(--shadow); }
 .page-head p { margin-bottom: 0; }
 
 /* ---------- footer ---------- */
@@ -401,11 +406,11 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
   border-radius: 26px;
   padding: 38px 32px;
   margin-bottom: 20px;
-  background: rgba(8, 14, 34, .46);
-  -webkit-backdrop-filter: blur(4px) saturate(140%);
-  backdrop-filter: blur(4px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, .26);
-  box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255, 255, 255, .25);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lift), inset 0 1px 0 var(--glass-hi);
   text-shadow: 0 2px 12px rgba(0, 0, 0, .55);
 }
 .hero h1 { font-size: 2rem; letter-spacing: -.02em; color: #fff; }
@@ -417,8 +422,9 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
 .hero.big h1 { font-size: 2.8rem; line-height: 1.12; margin-bottom: 12px; }
 .hero.big p { margin-left: auto; margin-right: auto; font-size: 1.1rem; }
 .hero.big .actions { justify-content: center; }
-.hero-logo { display: inline-block; background: #fff; border-radius: 18px; padding: 12px 22px; margin-bottom: 18px; box-shadow: 0 6px 20px rgba(0, 0, 0, .3); }
-.hero-logo img { display: block; height: 100px; width: auto; }
+/* the logo sits straight on the photo */
+.hero-logo { display: inline-block; margin-bottom: 18px; }
+.hero-logo img { display: block; height: 120px; width: auto; filter: var(--logo-edge-on); }
 
 /* Pages whose photos fill the whole browser window behind the content. */
 .has-backdrop .hero-stage { min-height: calc(100vh - 190px); display: flex; flex-direction: column; justify-content: center; }
@@ -489,8 +495,8 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
 .auth-photo { position: relative; background: #0c1e4a center / cover no-repeat; display: flex; flex-direction: column; justify-content: space-between; padding: 28px 36px 40px; }
 .auth-photo::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8, 14, 34, .15) 40%, rgba(8, 14, 34, .88)); }
 .auth-photo > * { position: relative; }
-.auth-logo { align-self: flex-start; background: #fff; border-radius: 16px; padding: 6px 14px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
-.auth-logo img { display: block; height: 62px; width: auto; }
+.auth-logo { align-self: flex-start; }
+.auth-logo img { display: block; height: 76px; width: auto; filter: var(--logo-edge-on); }
 .auth-caption b { display: block; color: #fff; font-size: 2.7rem; line-height: 1.1; letter-spacing: -.02em; text-shadow: 0 2px 14px rgba(0, 0, 0, .6); }
 .auth-caption span { display: block; margin-top: 8px; color: #ffd27a; font-size: 1.25rem; font-weight: 600; text-shadow: 0 2px 10px rgba(0, 0, 0, .6); }
 .auth-panel { position: relative; display: flex; flex-direction: column; padding: 22px 24px 40px; }
@@ -617,7 +623,7 @@ textarea { min-height: 90px; resize: vertical; }
 .btn, .logout {
   --clay: var(--blue);
   --clay-ink: #fff;
-  --clay-drop: rgba(53, 84, 209, .6);
+  --clay-drop: rgba(18, 63, 220, .6);
   --clay-lo: rgba(0, 0, 0, .22);
   --clay-hi: rgba(255, 255, 255, .34);
   position: relative;
@@ -672,19 +678,14 @@ textarea { min-height: 90px; resize: vertical; }
     inset 0 7px 10px rgba(0, 0, 0, .3),
     inset 0 -3px 6px rgba(255, 255, 255, .18);
 }
-.btn.accent { --clay: var(--red); --clay-drop: rgba(217, 43, 70, .6); }
+.btn.accent { --clay: var(--red); --clay-drop: rgba(242, 13, 29, .6); }
 .btn.green { --clay: var(--green-fill); --clay-drop: rgba(23, 121, 74, .6); }
-.btn.ghost { --clay: var(--clay-neutral); --clay-ink: var(--clay-neutral-ink); --clay-drop: rgba(10, 20, 60, .45); --clay-lo: rgba(0, 0, 0, .13); --clay-hi: rgba(255, 255, 255, .8); }
-.btn.ghost:hover { --clay: var(--blue); --clay-ink: #fff; --clay-drop: rgba(53, 84, 209, .6); --clay-lo: rgba(0, 0, 0, .22); --clay-hi: rgba(255, 255, 255, .34); filter: none; }
+.btn.ghost { --clay: var(--clay-neutral); --clay-ink: var(--clay-neutral-ink); --clay-drop: rgba(0, 0, 0, .55); --clay-lo: rgba(0, 0, 0, .2); --clay-hi: rgba(255, 255, 255, .26); }
+.btn.ghost:hover { --clay: var(--blue); --clay-ink: #fff; --clay-drop: rgba(18, 63, 220, .6); --clay-lo: rgba(0, 0, 0, .22); --clay-hi: rgba(255, 255, 255, .34); filter: none; }
 /* Destructive actions keep a neutral body with red text, so they never look like the main button. */
-.btn.danger, .logout { --clay: var(--clay-neutral); --clay-ink: var(--red-ink); --clay-drop: rgba(10, 20, 60, .45); --clay-lo: rgba(0, 0, 0, .13); --clay-hi: rgba(255, 255, 255, .8); }
-.btn.danger:hover, .logout:hover { --clay: var(--red); --clay-ink: #fff; --clay-drop: rgba(217, 43, 70, .6); --clay-lo: rgba(0, 0, 0, .22); --clay-hi: rgba(255, 255, 255, .34); filter: none; }
-[data-theme="dark"] .wrap .btn.ghost:not(:hover), [data-theme="dark"] .wrap .btn.danger:not(:hover), [data-theme="dark"] .auth-panel .btn.ghost:not(:hover) {
-  --clay-drop: rgba(0, 0, 0, .7);
-  --clay-lo: rgba(0, 0, 0, .3);
-  --clay-hi: rgba(255, 255, 255, .16);
-}
-.hero .btn.ghost, [data-theme="dark"] .wrap .hero .btn.ghost:not(:hover) { --clay: rgba(255, 255, 255, .24); --clay-ink: #fff; --clay-drop: rgba(0, 0, 0, .5); --clay-lo: rgba(0, 0, 0, .2); --clay-hi: rgba(255, 255, 255, .3); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.btn.danger, .logout { --clay: var(--clay-neutral); --clay-ink: var(--red-ink); --clay-drop: rgba(0, 0, 0, .55); --clay-lo: rgba(0, 0, 0, .2); --clay-hi: rgba(255, 255, 255, .26); }
+.btn.danger:hover, .logout:hover { --clay: var(--red); --clay-ink: #fff; --clay-drop: rgba(242, 13, 29, .6); --clay-lo: rgba(0, 0, 0, .22); --clay-hi: rgba(255, 255, 255, .34); filter: none; }
+.hero .btn.ghost { --clay: rgba(255, 255, 255, .24); --clay-ink: #fff; --clay-drop: rgba(0, 0, 0, .5); --clay-lo: rgba(0, 0, 0, .2); --clay-hi: rgba(255, 255, 255, .3); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 .hero .btn.ghost:hover { --clay: rgba(255, 255, 255, .92); --clay-ink: #0c1e4a; --clay-drop: rgba(0, 0, 0, .5); --clay-lo: rgba(0, 0, 0, .14); --clay-hi: rgba(255, 255, 255, .9); }
 
 /* busy: set by ui.js when a form is sent */
@@ -730,10 +731,10 @@ form.inline .btn, .actions-row .btn { margin-top: 0; }
 .actions-row select { width: auto; }
 
 .flash { padding: 12px 16px; border-radius: 14px; margin-bottom: 18px; font-weight: 600; border: 1px solid transparent; border-left-width: 5px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-.flash.ok { background: var(--green-soft); color: var(--green-ink); border-color: var(--green-fill); }
-.flash.error { background: var(--red-soft); color: var(--red-ink); border-color: var(--red); }
-/* On photo pages the message needs a solid enough panel to stay readable. */
-.has-backdrop .flash { background-color: var(--glass-photo); }
+/* A message is strong glass with a wash of its colour, so it reads over any photo. */
+.flash { background-color: var(--glass-strong); }
+.flash.ok { background-image: linear-gradient(var(--green-soft), var(--green-soft)); color: var(--green-ink); border-color: var(--green-fill); }
+.flash.error { background-image: linear-gradient(var(--red-soft), var(--red-soft)); color: var(--red-ink); border-color: var(--red); }
 .note { background: var(--blue-soft); border-left: 4px solid var(--blue); padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; white-space: pre-line; }
 
 /* ---------- tables ---------- */
@@ -750,7 +751,7 @@ tr:last-child td { border-bottom: 0; }
 .tabs a { padding: 6px 16px; border-radius: 999px; text-decoration: none; font-size: .9rem; font-weight: 600; color: var(--ink); box-shadow: 0 0 0 1px var(--tile-edge); transition: transform .18s cubic-bezier(.3, 1.6, .5, 1), background-color .15s ease, color .15s ease, box-shadow .15s ease; }
 .tabs a:hover { color: var(--link); box-shadow: 0 0 0 2px var(--link); transform: translateY(-2px); }
 .tabs a:active { transform: translateY(1px) scale(.96); }
-.tabs a.on { background: var(--blue); color: #fff; border-color: transparent; box-shadow: 0 6px 12px -6px rgba(53, 84, 209, .8), inset 0 -3px 5px rgba(0, 0, 0, .2), inset 0 3px 5px rgba(255, 255, 255, .28); }
+.tabs a.on { background: var(--blue); color: #fff; border-color: transparent; box-shadow: 0 6px 12px -6px rgba(18, 63, 220, .8), inset 0 -3px 5px rgba(0, 0, 0, .2), inset 0 3px 5px rgba(255, 255, 255, .28); }
 
 .thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); display: block; }
 .item { border-bottom: 1px solid var(--line); padding: 14px 0; }

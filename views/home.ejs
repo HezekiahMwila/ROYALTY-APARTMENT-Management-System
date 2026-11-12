@@ -1,22 +1,153 @@
-<%# The index page: the first page everyone sees, students and admin alike.
-    The apartment pictures fill the browser window behind it (see partials/showcase). %>
-<%- include('partials/head', { title: 'Welcome', bodyClass: 'has-backdrop' }) %>
-<div class="hero-stage">
-  <section class="hero big">
-    <div class="hero-logo"><img src="/logo.svg" alt="" width="181" height="100"></div>
-    <h1>Welcome to Royalty Apartments</h1>
-    <p><%= settings.welcome_message || 'A comfortable, secure home for university students.' %></p>
-    <div class="actions">
-      <% if (user) { %>
-        <a class="btn accent" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Continue as <%= user.name.split(' ')[0] %></a>
-      <% } else { %>
-        <a class="btn accent" href="/login">Log in</a>
-        <a class="btn ghost" href="/register">Create a student account</a>
-      <% } %>
-    </div>
-    <% if (!user) { %><p class="small" style="margin:14px auto 0">Students and the admin log in from the same page.</p><% } %>
-  </section>
+<%# The landing page: the first page everyone sees, students and admin alike.
+    It opens with the logo appearing, then the welcome with the services wired around the
+    house, then sections about the apartments that come in as you scroll.
+    Styles are in /landing.css and the animation in /landing.js. The pictures, services and
+    welcome message are the ones the admin manages in Settings; the figures are counted from
+    the rooms (see the "/" route in server.js). %>
+<%- include('partials/head', { title: 'Welcome', bodyClass: 'has-backdrop', styles: ['/landing.css'] }) %>
+<%
+  // A small picture for each service, chosen from the words the admin typed.
+  const ICONS = [
+    [/wi-?fi|internet|starlink/i, '<path d="M2.5 9.5a14 14 0 0 1 19 0M5.7 13a9.5 9.5 0 0 1 12.6 0M8.8 16.4a5 5 0 0 1 6.4 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/>'],
+    [/lounge|sofa|common/i, '<path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4ZM6 18v2M18 18v2"/>'],
+    [/electric|power|light/i, '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>'],
+    [/water/i, '<path d="M12 3s6 6.2 6 11a6 6 0 0 1-12 0c0-4.8 6-11 6-11Z"/>'],
+    [/secur|cctv|guard|safe/i, '<path d="m12 3 7 3v5c0 4.5-3 8.3-7 10-4-1.700-7-5.500-7-10V6l7-3ZM9 12l2 2 4-4"/>'],
+    [/clean/i, '<path d="m12 3 1.800 4.700 4.700 1.800-4.700 1.800L12 16l-1.800-4.700-4.700-1.800 4.700-1.800L12 3ZM19 15l.9 2.100 2.100.9-2.100.9L19 21l-.9-2.100L16 18l2.100-.9.9-2.100Z"/>'],
+    [/gas|cook|kitchen|stove/i, '<path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9Z"/>'],
+    [/bed|furnish|desk|room/i, '<path d="M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7M3 15h18M6 9V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2M3 18v2M21 18v2"/>'],
+  ];
+  const TICK = '<path d="m5 12.500 4.500 4.500L19 7.500"/>';
+  const icon = (text) => `<svg viewBox="0 0 24 24" aria-hidden="true">${(ICONS.find(([re]) => re.test(text)) || [0, TICK])[1]}</svg>`;
+
+  // Where the first six services sit around the house, as percentages of the diagram.
+  const SPOTS = [[18, 16], [8, 50], [18, 84], [82, 16], [92, 50], [82, 84]];
+  const around = services.slice(0, SPOTS.length);
+  const firstName = user ? user.name.split(' ')[0] : '';
+%>
+<script>
+  // Switch the animations on before anything is drawn. Without scripts, or for visitors who
+  // prefer less motion, the page simply shows everything at once. The logo opening plays once
+  // per visit to the site.
+  (function () {
+    var root = document.documentElement;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    root.classList.add('anim');
+    try { if (sessionStorage.getItem('opened')) root.classList.add('opened'); } catch (e) {}
+  })();
+</script>
+
+<%# ----- the logo opening: the house appears, then the full logo is uncovered ----- %>
+<div class="ld-splash" aria-hidden="true">
+  <div class="ld-splash-stage">
+    <img class="ld-splash-mark" src="/favicon.svg" alt="" width="120" height="120">
+    <img class="ld-splash-logo" src="/logo.svg" alt="" width="1757" height="1067">
+  </div>
 </div>
 
-<%- include('partials/showcase') %>
+<%# the apartment pictures fill the window behind the page and change by themselves %>
+<div class="backdrop" aria-hidden="true">
+  <% slides.forEach((s, i) => { %>
+    <figure class="slide <%= i === 0 ? 'on' : '' %>"><img src="<%= s.src %>" alt=""></figure>
+  <% }) %>
+</div>
+
+<%# ----- welcome ----- %>
+<section class="ld-hero">
+  <p class="ld-eyebrow" data-reveal>University student accommodation</p>
+  <h1 data-words>Welcome to Royalty Apartments</h1>
+  <p class="ld-lead" data-reveal style="--d:.5s"><%= settings.welcome_message || 'A comfortable, secure home for university students.' %></p>
+  <div class="ld-actions" data-reveal style="--d:.65s">
+    <% if (user) { %>
+      <a class="btn accent" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Continue as <%= firstName %></a>
+    <% } else { %>
+      <a class="btn accent" href="/register">Create a student account</a>
+      <a class="btn ghost" href="/login">Log in</a>
+    <% } %>
+  </div>
+
+  <% if (around.length) { %>
+  <%# the house in the middle, with a line out to each service and a light running along it %>
+  <div class="ld-orbit" data-reveal style="--d:.8s">
+    <svg class="ld-wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <% around.forEach((s, i) => { %>
+        <line class="ld-wire" x1="50" y1="50" x2="<%= SPOTS[i][0] %>" y2="<%= SPOTS[i][1] %>"/>
+        <line class="ld-spark" pathLength="100" x1="50" y1="50" x2="<%= SPOTS[i][0] %>" y2="<%= SPOTS[i][1] %>" style="--i:<%= i %>"/>
+      <% }) %>
+    </svg>
+    <div class="ld-hub"><img src="/favicon.svg" alt="" width="64" height="64"></div>
+    <ul class="ld-nodes" aria-label="What we offer">
+      <% around.forEach((s, i) => { %>
+        <li class="ld-node" style="--x:<%= SPOTS[i][0] %>%; --y:<%= SPOTS[i][1] %>%; --i:<%= i %>"><span class="ld-node-icon"><%- icon(s) %></span><span class="ld-node-label"><%= s %></span></li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+</section>
+
+<%# ----- what we offer ----- %>
+<% if (services.length) { %>
+<section class="ld-section">
+  <p class="ld-kicker" data-reveal>What we offer</p>
+  <h2 data-words>Everything you need to settle in and study</h2>
+  <ul class="ld-bento">
+    <% services.forEach((s, i) => { %>
+      <li class="ld-card" data-reveal style="--d:<%= (i % 3) * 0.08 %>s"><span class="ld-card-icon"><%- icon(s) %></span><b><%= s %></b></li>
+    <% }) %>
+  </ul>
+</section>
+<% } %>
+
+<%# ----- the place in pictures ----- %>
+<section class="ld-section">
+  <p class="ld-kicker" data-reveal>The apartments</p>
+  <h2 data-words>Take a look around</h2>
+  <div class="ld-gallery">
+    <% slides.forEach((s, i) => { %>
+      <figure class="ld-shot" data-reveal style="--d:<%= (i % 4) * 0.08 %>s">
+        <img src="<%= s.src %>" alt="<%= s.caption || 'Royalty Apartments' %>" loading="lazy">
+        <% if (s.caption) { %><figcaption><%= s.caption %></figcaption><% } %>
+      </figure>
+    <% }) %>
+  </div>
+</section>
+
+<%# ----- the place in numbers ----- %>
+<section class="ld-section">
+  <p class="ld-kicker" data-reveal>At a glance</p>
+  <h2 data-words>Room for you at Royalty</h2>
+  <div class="ld-figures">
+    <div class="ld-figure" data-reveal><b data-count="<%= stats.rooms %>"><%= stats.rooms %></b><span>rooms</span></div>
+    <div class="ld-figure" data-reveal style="--d:.08s"><b data-count="<%= stats.bedspaces %>"><%= stats.bedspaces %></b><span>bedspaces</span></div>
+    <div class="ld-figure" data-reveal style="--d:.16s"><b data-count="<%= stats.free %>"><%= stats.free %></b><span>bedspaces free right now</span></div>
+  </div>
+</section>
+
+<%# ----- how it works ----- %>
+<section class="ld-section">
+  <p class="ld-kicker" data-reveal>How it works</p>
+  <h2 data-words>Move in, in three steps</h2>
+  <ol class="ld-steps">
+    <li class="ld-step" data-reveal><span class="ld-step-no">1</span><b>Create your account</b><p>Sign up with your name, phone number and email. It takes a minute.</p></li>
+    <li class="ld-step" data-reveal style="--d:.1s"><span class="ld-step-no">2</span><b>Get your room</b><p>The caretaker assigns your room, or you scan the room's QR code to check in.</p></li>
+    <li class="ld-step" data-reveal style="--d:.2s"><span class="ld-step-no">3</span><b>Manage it all online</b><p>Send your rent payment, report a problem in your room and rate your roommates.</p></li>
+  </ol>
+</section>
+
+<%# ----- closing invitation ----- %>
+<section class="ld-section ld-cta" data-reveal>
+  <h2><%= user ? 'Welcome back, ' + firstName : 'Ready to move in?' %></h2>
+  <p><%= user ? 'Pick up where you left off.' : 'Students and the admin log in from the same page.' %></p>
+  <div class="ld-actions">
+    <% if (user) { %>
+      <a class="btn accent" href="<%= user.role === 'admin' ? '/admin' : '/student' %>">Continue as <%= firstName %></a>
+    <% } else { %>
+      <a class="btn accent" href="/register">Create a student account</a>
+      <a class="btn ghost" href="/login">Log in</a>
+    <% } %>
+  </div>
+</section>
+
+<%# If the script cannot load, switch the animations back off so nothing stays hidden. %>
+<script src="/landing.js" onerror="document.documentElement.classList.remove('anim')"></script>
 <%- include('partials/foot') %>

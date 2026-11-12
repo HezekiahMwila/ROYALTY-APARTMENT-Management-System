@@ -1,0 +1,301 @@
+/* Sign-in pages (log in, create account): a frosted-glass panel over an apartment photo.
+   The photo is passed in by the page as --lg-photo. Text on the glass is white in both themes;
+   the dark theme dims the photo and the glass further. The button uses the logo's blue.
+   Loaded after style.css, on those pages only (see views/partials/glass_head.ejs). */
+
+.lg {
+  --lg-navy: #0a2a9e;
+  --lg-blue: #123fdc;
+
+  --lg-scrim: linear-gradient(180deg, rgba(8, 14, 40, .22), rgba(8, 14, 40, .46));
+  --lg-ink: #ffffff;
+  --lg-muted: #eef1fa;
+  --lg-glass: rgba(34, 44, 76, .32);
+  --lg-glass-edge: rgba(255, 255, 255, .5);
+  --lg-glass-shine: rgba(255, 255, 255, .34);
+  --lg-field: rgba(255, 255, 255, .14);
+  --lg-field-edge: rgba(255, 255, 255, .62);
+  --lg-field-hover: rgba(255, 255, 255, .2);
+  --lg-drop: rgba(4, 8, 26, .5);
+  --lg-ring: rgba(255, 255, 255, .45);
+}
+
+[data-theme="dark"] .lg {
+  --lg-scrim: linear-gradient(180deg, rgba(5, 8, 22, .58), rgba(5, 8, 22, .8));
+  --lg-muted: #d9deee;
+  --lg-glass: rgba(8, 12, 30, .56);
+  --lg-glass-edge: rgba(255, 255, 255, .22);
+  --lg-glass-shine: rgba(255, 255, 255, .14);
+  --lg-field: rgba(0, 0, 0, .26);
+  --lg-field-edge: rgba(255, 255, 255, .34);
+  --lg-field-hover: rgba(255, 255, 255, .08);
+  --lg-drop: rgba(0, 0, 0, .7);
+  --lg-ring: rgba(170, 188, 255, .5);
+}
+
+/* ---------- backdrop: the photo, with a soft shade over it so white text stays readable ---------- */
+.lg { color: var(--lg-ink); background: #10132c; }
+.lg::before { background: var(--lg-scrim), var(--lg-photo) center / cover no-repeat, #10132c; }
+
+/* ---------- theme button ---------- */
+.lg-theme {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 5;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--lg-glass-edge);
+  border-radius: 14px;
+  background: var(--lg-glass);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 10px 22px -10px var(--lg-drop), inset 0 1px 0 var(--lg-glass-shine);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  transition: transform .18s cubic-bezier(.3, 1.6, .5, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.lg-theme:hover { transform: translateY(-2px); }
+.lg-theme:active { transform: scale(.94); }
+.lg-theme svg { width: 22px; height: 22px; }
+.lg-moon { fill: currentColor; }
+.lg-sun { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; display: none; }
+[data-theme="dark"] .lg-moon { display: none; }
+[data-theme="dark"] .lg-sun { display: block; }
+
+/* ---------- panel ---------- */
+.lg-main { flex: 1; display: grid; place-items: center; padding: 76px 16px 32px; }
+.lg-panel {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  padding: 40px 38px 34px;
+  text-align: center;
+  border: 1px solid var(--lg-glass-edge);
+  border-radius: 28px;
+  background: var(--lg-glass);
+  box-shadow: 0 40px 80px -28px var(--lg-drop), 0 14px 30px -16px var(--lg-drop), inset 0 1px 0 var(--lg-glass-shine);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+}
+/* a band of light across the top corner, as on a pane of glass */
+.lg-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(150deg, var(--lg-glass-shine) 0%, transparent 38%);
+  opacity: .55;
+  pointer-events: none;
+}
+.lg-panel > * { position: relative; }
+
+.lg-panel h1 { margin: 0; font-size: clamp(2rem, 7vw, 2.4rem); font-weight: 700; letter-spacing: .01em; line-height: 1.15; color: var(--lg-ink); text-shadow: 0 2px 12px rgba(0, 0, 0, .35); }
+.lg-sub { margin: 8px 0 28px; font-size: .95rem; color: var(--lg-muted); text-shadow: 0 1px 6px rgba(0, 0, 0, .4); }
+
+.lg-flash { margin: 0 0 18px; padding: 11px 16px; border-radius: 12px; font-size: .92rem; font-weight: 600; text-align: left; color: #fff; border: 1px solid rgba(255, 255, 255, .45); }
+.lg-flash.error { background: rgba(176, 0, 0, .88); }
+.lg-flash.ok { background: rgba(12, 100, 58, .9); }
+
+/* ---------- form ---------- */
+.lg-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+.lg-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 54px;
+  margin-bottom: 16px;
+  padding: 0 6px 0 16px;
+  border: 1.5px solid var(--lg-field-edge);
+  border-radius: 14px;
+  background: var(--lg-field);
+  box-shadow: inset 0 1px 0 var(--lg-glass-shine);
+  transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.lg-field:hover { background: var(--lg-field-hover); }
+.lg-field:focus-within { border-color: #fff; box-shadow: 0 0 0 4px var(--lg-ring), inset 0 1px 0 var(--lg-glass-shine); }
+.lg-field > svg { flex: none; width: 22px; height: 22px; fill: #fff; }
+/* the glass box is the field; the input inside it is bare (this undoes style.css's boxes) */
+.lg-field input, .lg-field input:hover, .lg-field input:focus, .lg-field input:user-invalid {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+  background: none;
+  color: var(--lg-ink);
+  font: inherit;
+  font-size: 1rem;   /* 16px: phones do not zoom in when the box is tapped */
+}
+.lg-field input::placeholder { color: var(--lg-muted); opacity: 1; }
+/* a saved login filled in by the browser keeps the glass look */
+.lg-field input:-webkit-autofill { -webkit-text-fill-color: #fff; caret-color: #fff; transition: background-color 99999s; }
+
+/* a short note under a field */
+.lg-hint { margin: -9px 4px 14px; font-size: .85rem; text-align: left; color: var(--lg-muted); text-shadow: 0 1px 6px rgba(0, 0, 0, .4); }
+/* a form with no "Remember me" row: leave room above the button */
+.lg-field + .lg-btn { margin-top: 24px; }
+
+.lg-eye { flex: none; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 11px; background: none; cursor: pointer; }
+.lg-eye:hover { background: rgba(255, 255, 255, .16); }
+.lg-eye svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.lg-eye-on, .lg-eye[aria-pressed="true"] .lg-eye-off { display: none; }
+.lg-eye[aria-pressed="true"] .lg-eye-on { display: block; }
+
+.lg-check { display: flex; align-items: center; gap: 10px; width: fit-content; min-height: 32px; margin: 2px 2px 22px; font-size: .95rem; font-weight: 500; cursor: pointer; color: var(--lg-ink); }
+.lg-check input, .lg-check input:hover, .lg-check input:focus {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid #fff;
+  border-radius: 6px;
+  box-shadow: none;
+  background: var(--lg-field);
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+.lg-check input:checked, .lg-check input:checked:hover, .lg-check input:checked:focus {
+  background: var(--lg-blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 12.5l4.2 4.2 8.8-9.4'/%3E%3C/svg%3E") center / 16px no-repeat;
+}
+
+.lg-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 56px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #3f66f2 0%, var(--lg-blue) 45%, var(--lg-navy) 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  cursor: pointer;
+  box-shadow: 0 16px 28px -14px rgba(0, 20, 110, .9), inset 0 1px 0 rgba(255, 255, 255, .4), inset 0 -6px 12px rgba(0, 10, 60, .35);
+  transition: transform .18s cubic-bezier(.3, 1.6, .5, 1), filter .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.lg-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.lg-btn:active { transform: translateY(1px) scale(.985); }
+/* while the form is being sent (ui.js): a spinner beside the word */
+.lg-btn.is-busy { cursor: progress; filter: saturate(.8); }
+.lg-btn.is-busy::after { content: ""; width: 18px; height: 18px; border: 2.5px solid rgba(255, 255, 255, .4); border-top-color: #fff; border-radius: 50%; animation: lg-spin .7s linear infinite; }
+@keyframes lg-spin { to { transform: rotate(360deg); } }
+
+.lg-foot { margin: 24px 0 0; font-size: .95rem; color: var(--lg-ink); text-shadow: 0 1px 6px rgba(0, 0, 0, .4); }
+.lg-foot a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.lg-foot a:hover { text-decoration-thickness: 2px; }
+
+.lg :focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.lg-field input:focus-visible { outline: 0; }   /* the whole box shows the focus ring instead */
+
+/* ---------- pictures and services beside the form (create account) ----------
+   One wide pane of glass: sliding apartment pictures and "What we offer" on the left, the
+   form on the right. */
+.lg-panel.lg-split {
+  max-width: 960px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  gap: 36px;
+  padding: 22px 40px 22px 22px;
+}
+.lg-form { align-self: center; min-width: 0; }
+.lg-split .lg-form { padding: 16px 0; }
+.lg-side { display: flex; flex-direction: column; gap: 20px; min-width: 0; text-align: left; }
+
+.lg-slides {
+  position: relative;
+  flex: 1;
+  min-height: 290px;
+  overflow: hidden;
+  border: 1px solid var(--lg-glass-edge);
+  border-radius: 20px;
+  background: #10132c;
+  box-shadow: 0 18px 34px -18px var(--lg-drop);
+}
+.lg-track { display: flex; height: 100%; transition: transform .75s cubic-bezier(.45, 0, .2, 1); }
+.lg-slide { position: relative; flex: 0 0 100%; margin: 0; }
+.lg-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* shade under the caption and controls */
+.lg-slides::after { content: ""; position: absolute; inset: auto 0 0; height: 46%; background: linear-gradient(180deg, transparent, rgba(4, 8, 24, .82)); pointer-events: none; }
+.lg-slide-bar { position: absolute; z-index: 1; left: 16px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.lg-slide-caption { flex: 1; min-width: 0; font-weight: 700; font-size: 1rem; line-height: 1.3; color: #fff; text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
+.lg-slide-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: 50%;
+  background: rgba(20, 28, 60, .5);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background-color .15s ease, transform .15s ease;
+}
+.lg-slide-btn:hover { background: var(--lg-blue); transform: scale(1.06); }
+.lg-slide-btn svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.lg-dots { display: flex; align-items: center; }
+/* each dot is a small mark inside a finger-sized button */
+.lg-dots button { display: grid; place-items: center; width: 20px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; }
+.lg-dots button::before { content: ""; width: 8px; height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .55); transition: width .25s ease, background-color .25s ease; }
+.lg-dots button.on::before { width: 18px; background: #fff; }
+.lg-dots button.on { width: 28px; }
+
+.lg-offer { padding: 0 6px 6px; }
+.lg-offer h2 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 700; color: #fff; text-shadow: 0 1px 8px rgba(0, 0, 0, .4); }
+.lg-offer ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 9px 16px; margin: 0; padding: 0; list-style: none; }
+.lg-offer li { display: flex; align-items: flex-start; gap: 9px; font-size: .93rem; line-height: 1.35; color: var(--lg-ink); text-shadow: 0 1px 6px rgba(0, 0, 0, .4); }
+.lg-offer li::before {
+  content: "";
+  flex: none;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: var(--lg-blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-8.500'/%3E%3C/svg%3E") center / 13px no-repeat;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .5);
+}
+
+/* Narrower than a laptop: one column. Pictures on top, then the form, then the services. */
+@media (max-width: 860px) {
+  .lg-panel.lg-split { max-width: 430px; display: flex; flex-direction: column; gap: 22px; padding: 14px 14px 26px; }
+  .lg-side { display: contents; }
+  .lg-slides { order: 1; flex: none; height: 200px; min-height: 0; }
+  .lg-split .lg-form { order: 2; padding: 0 8px; }
+  .lg-offer { order: 3; padding: 20px 8px 0; border-top: 1px solid var(--lg-glass-edge); }
+}
+
+/* ---------- phones ---------- */
+@media (max-width: 520px) {
+  .lg-slides { height: 176px; }
+  .lg-theme { top: 12px; right: 12px; }
+  .lg-main { padding: 72px 14px 24px; }
+  .lg-panel { padding: 32px 22px 28px; border-radius: 24px; }
+  .lg-sub { margin-bottom: 24px; }
+}
+/* short screens (a phone on its side): tighten so the button stays in reach */
+@media (max-height: 560px) {
+  .lg-main { padding-top: 14px; padding-bottom: 14px; }
+  .lg-panel { padding-top: 22px; padding-bottom: 20px; }
+  .lg-sub { margin-bottom: 16px; }
+}

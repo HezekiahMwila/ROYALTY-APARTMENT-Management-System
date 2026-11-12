@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <%- include('meta', { title }) %>
-</head>
-<body class="<%= locals.bodyClass || '' %>">
+<%# A page can ask for extra stylesheets of its own: include('partials/head', { styles: ['/landing.css'] }) %>
+<% (locals.styles || []).forEach((href) => { %>  <link rel="stylesheet" href="<%= href %>">
+<% }) %></head>
+<%# Every page sits on one of the apartment photos (style.css: body::before). %>
+<body class="<%= locals.bodyClass || '' %>" style="--page-photo: url('<%= photo(1) %>')">
 <%
   const links = !user
     ? [['/', 'Home'], ['/login', 'Log in'], ['/register', 'Register']]
@@ -27,7 +30,7 @@
       <% if (user) { %><form method="post" action="/logout"><button class="logout" type="submit">Log out</button></form><% } %>
     </nav>
   </details>
-  <a class="brand" href="/"><img src="/logo.svg" alt="Royalty Apartments" width="102" height="56"></a>
+  <a class="brand" href="/"><img src="/logo.svg" alt="Royalty Apartments" width="92" height="56"></a>
   <%- include('theme_toggle') %>
 </header>
 <main class="wrap">

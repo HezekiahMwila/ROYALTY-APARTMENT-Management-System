@@ -1,12 +1,17 @@
-<%- include('partials/auth_head', { title: 'Log in' }) %>
-<h1>Log in</h1>
-<p class="muted">Students log in with their phone number.</p>
-<form method="post" action="/login">
-  <label for="login">Phone number <span class="opt">(admin: email)</span></label>
-  <input id="login" name="login" autocomplete="username" required autofocus>
-  <label for="password">Password</label>
-  <input id="password" name="password" type="password" autocomplete="current-password" required>
-  <button class="btn" type="submit">Log in</button>
-</form>
-<p class="small muted" style="margin:16px 0 0">New student? <a href="/register">Create an account</a></p>
-<%- include('partials/auth_foot') %>
+<%- include('partials/glass_head', { title: 'Log in', heading: 'Login', sub: 'Welcome back, please log in to your account.' }) %>
+    <form method="post" action="/login">
+      <label class="lg-sr" for="login">Phone number or email</label>
+      <div class="lg-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4.2"/><path d="M3.8 20.5c.5-4.300 3.900-6.800 8.200-6.800s7.700 2.500 8.200 6.800c.05.5-.3.900-.8.900H4.600c-.5 0-.85-.4-.8-.9Z"/></svg>
+        <input id="login" name="login" placeholder="Phone number or email" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+      </div>
+
+<%- include('partials/glass_password', { placeholder: 'Password', autocomplete: 'current-password' }) %>
+
+      <label class="lg-check"><input type="checkbox" name="remember" value="1" checked><span>Remember me</span></label>
+
+      <button class="lg-btn" type="submit">Login</button>
+    </form>
+
+    <p class="lg-foot">Don't have an account? <a href="/register">Sign up</a></p>
+<%- include('partials/glass_foot') %>

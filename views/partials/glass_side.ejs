@@ -1,0 +1,31 @@
+<%# Side of a glass sign-in page: the apartment pictures, sliding by themselves, and the list of
+    services. Needs slides and services (see showcase() in server.js). The pictures and the
+    services are the ones the admin manages in Settings. Behaviour is in /auth.js. %>
+    <aside class="lg-side">
+      <div class="lg-slides" data-slides role="group" aria-roledescription="carousel" aria-label="Pictures of Royalty Apartments">
+        <div class="lg-track">
+          <% slides.forEach((s, i) => { %>
+          <figure class="lg-slide" role="group" aria-roledescription="slide" aria-label="<%= i + 1 %> of <%= slides.length %>"<%= i === 0 ? '' : ' aria-hidden=true' %>>
+            <img src="<%= s.src %>" alt="<%= s.caption || 'Royalty Apartments' %>"<%= i === 0 ? '' : ' loading=lazy' %>>
+          </figure>
+          <% }) %>
+        </div>
+        <div class="lg-slide-bar">
+          <span class="lg-slide-caption" data-caption><%= slides[0].caption %></span>
+          <% if (slides.length > 1) { %>
+          <button class="lg-slide-btn" type="button" data-prev aria-label="Previous picture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6"/></svg></button>
+          <span class="lg-dots"><% slides.forEach((s, i) => { %><button type="button" data-dot<%= i === 0 ? ' class=on' : '' %> aria-label="Show picture <%= i + 1 %> of <%= slides.length %>"></button><% }) %></span>
+          <button class="lg-slide-btn" type="button" data-next aria-label="Next picture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (services.length) { %>
+      <div class="lg-offer">
+        <h2>What we offer</h2>
+        <ul>
+          <% services.forEach(s => { %><li><%= s %></li><% }) %>
+        </ul>
+      </div>
+      <% } %>
+    </aside>

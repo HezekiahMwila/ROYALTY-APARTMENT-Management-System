@@ -63,11 +63,13 @@ function flash(res, type, text) {
   res.cookie('flash', JSON.stringify({ type, text }), { httpOnly: true, sameSite: 'lax' });
 }
 
-function startSession(res, userId) {
+// "Remember me" keeps the login for SESSION_DAYS. Without it the login ends when the browser
+// is closed (the cookie has no expiry date), and after a day at the latest.
+function startSession(res, userId, remember = true) {
   const token = crypto.randomBytes(32).toString('hex');
-  const maxAge = SESSION_DAYS * 24 * 60 * 60 * 1000;
+  const maxAge = (remember ? SESSION_DAYS : 1) * 24 * 60 * 60 * 1000;
   db.run('INSERT INTO sessions (token, user_id, expires) VALUES (?, ?, ?)', token, userId, Date.now() + maxAge);
-  res.cookie('sid', token, { httpOnly: true, sameSite: 'lax', maxAge });
+  res.cookie('sid', token, { httpOnly: true, sameSite: 'lax', ...(remember ? { maxAge } : {}) });
 }
 
 const adminExists = () => !!db.get(`SELECT 1 AS x FROM users WHERE role = 'admin'`);
@@ -219,7 +221,14 @@ const homeFor = (user) => (user.role === 'admin' ? '/admin' : '/student');
 
 app.get('/', (req, res) => {
   if (!adminExists()) return res.redirect('/setup');
-  res.render('home', { ...showcase(req) });
+  // Figures for the landing page, counted from the rooms students can actually live in.
+  const rooms = listRooms().filter((r) => r.status !== 'reserved');
+  const stats = {
+    rooms: rooms.length,
+    bedspaces: rooms.reduce((n, r) => n + r.capacity, 0),
+    free: rooms.reduce((n, r) => n + Math.max(0, r.capacity - r.occupants), 0),
+  };
+  res.render('home', { ...showcase(req), stats });
 });
 
 // One-time setup: the first visitor creates the admin account.
@@ -259,7 +268,7 @@ app.post('/login', (req, res) => {
     flash(res, 'error', 'Incorrect phone number or password.');
     return res.redirect('/login');
   }
-  startSession(res, user.id);
+  startSession(res, user.id, req.body.remember === '1');
   res.redirect(afterLogin(req, res, homeFor(user)));
 });
 
@@ -272,7 +281,7 @@ app.post('/logout', (req, res) => {
 app.get('/register', (req, res) => {
   if (!adminExists()) return res.redirect('/setup');
   if (req.user) return res.redirect(homeFor(req.user));
-  res.render('register');
+  res.render('register', { ...showcase(req) });   // pictures and services beside the form
 });
 
 // Students register with name, phone and email only. The caretaker assigns the room.
