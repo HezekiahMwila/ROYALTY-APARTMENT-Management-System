@@ -1,10 +1,11 @@
 <%# Apartment slideshow and services, shown on the public and student homepages. %>
 <%
-  // Until the caretaker uploads real photos in Settings, the slideshow shows demo pictures.
-  const demo = !photos.length;
-  const slides = demo
-    ? [1, 2, 3, 4, 5].map(n => ({ src: `/demo/slide-${n}.jpg`, caption: `Demo picture ${n}` }))
-    : photos.map(p => ({ src: `/photos/${p.file}`, caption: p.caption }));
+  // The slideshow shows these pictures of Royalty Apartments (in public/slides) until the
+  // caretaker uploads photos in Settings; uploaded photos then take their place.
+  const DEFAULT_SLIDES = ['Entrance and parking', 'Shaded sitting area', 'Outdoor lounge', 'Bedroom', 'Washing area'];
+  const slides = photos.length
+    ? photos.map(p => ({ src: `/photos/${p.file}`, caption: p.caption }))
+    : DEFAULT_SLIDES.map((caption, i) => ({ src: `/slides/slide-${i + 1}.jpg`, caption }));
 %>
 <section class="section">
   <h2>Our apartments</h2>
@@ -12,7 +13,9 @@
     <div class="slides">
       <% slides.forEach((s, i) => { %>
         <figure class="slide <%= i === 0 ? 'on' : '' %>" aria-hidden="<%= i === 0 ? 'false' : 'true' %>">
-          <img src="<%= s.src %>" alt="<%= s.caption || 'Royalty Apartments' %>" <%= i === 0 ? '' : 'loading=lazy' %>>
+          <%# A blurred copy fills the frame behind the picture, so upright photos are shown whole instead of cropped. %>
+          <div class="slide-bg" style="background-image:url('<%= s.src %>')" aria-hidden="true"></div>
+          <img src="<%= s.src %>" alt="<%= s.caption || 'Royalty Apartments' %>">
           <% if (s.caption) { %><figcaption><%= s.caption %></figcaption><% } %>
         </figure>
       <% }) %>
@@ -25,7 +28,6 @@
       </div>
     <% } %>
   </div>
-  <% if (demo) { %><p class="muted small" style="margin-top:8px">These are demo pictures. Photos of the apartments will be added soon.</p><% } %>
 </section>
 
 <script>

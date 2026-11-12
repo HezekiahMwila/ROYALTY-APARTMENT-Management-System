@@ -2,7 +2,6 @@
 <%- include('partials/head', { title: 'Welcome' }) %>
 <section class="hero big">
   <div class="hero-logo"><img src="/logo.svg" alt="" width="181" height="100"></div>
-  <p class="eyebrow">University student boarding house</p>
   <h1>Welcome to Royalty Apartments</h1>
   <p><%= settings.welcome_message || 'A comfortable, secure home for university students.' %></p>
   <div class="actions">
@@ -17,14 +16,4 @@
 </section>
 
 <%- include('partials/showcase') %>
-
-<% const free = rooms.filter(r => r.status === 'vacant' || r.status === 'available').length; %>
-<section class="section">
-  <h2>Room availability <span class="muted small">· <%= free %> of <%= rooms.length %> rooms have space</span></h2>
-  <div class="rooms">
-    <% rooms.forEach(r => { %>
-      <%- include('partials/room_card', { r }) %>
-    <% }) %>
-  </div>
-</section>
 <%- include('partials/foot') %>

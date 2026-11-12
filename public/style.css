@@ -196,7 +196,8 @@ a.stat:hover { border-color: var(--blue); transform: translateY(-2px); box-shado
 .slides { position: relative; aspect-ratio: 2 / 1; }
 .slide { position: absolute; inset: 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility .5s; }
 .slide.on { opacity: 1; visibility: visible; }
-.slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.slide-bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(22px) brightness(.7); }
+.slide img { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; }
 .slide figcaption {
   position: absolute;
   inset: auto 0 0 0;
@@ -291,7 +292,7 @@ a.stat:hover { border-color: var(--blue); transform: translateY(-2px); box-shado
   transition: transform .15s, box-shadow .15s;
 }
 a.room:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); color: inherit; }
-.room b { display: block; font-size: 1.08rem; color: var(--navy); }
+.room b { display: block; font-size: 1.08rem; color: var(--navy); margin-bottom: 6px; }
 .room .taken { color: var(--muted); font-size: .85rem; display: block; margin: 2px 0 6px; }
 .room .left { display: inline-block; font-size: .78rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #eceff5; }
 .room.vacant { border-top-color: var(--green); }

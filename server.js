@@ -217,7 +217,7 @@ const homeFor = (user) => (user.role === 'admin' ? '/admin' : '/student');
 
 app.get('/', (req, res) => {
   if (!adminExists()) return res.redirect('/setup');
-  res.render('home', { rooms: listRooms(), ...showcase(req) });
+  res.render('home', { ...showcase(req) });
 });
 
 // One-time setup: the first visitor creates the admin account.
