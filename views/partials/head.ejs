@@ -2,11 +2,18 @@
 <html lang="en">
 <head>
 <%- include('meta', { title }) %>
-<%# A page can ask for extra stylesheets of its own: include('partials/head', { styles: ['/landing.css'] }) %>
-<% (locals.styles || []).forEach((href) => { %>  <link rel="stylesheet" href="<%= href %>">
+<%
+  // Every page the admin works in (anything under /admin, and their account) gets the admin
+  // frame: the navy dashboard look and the side menu (partials/admin_shell.ejs, /admin.css).
+  const adminFrame = !!(user && user.role === 'admin' && (path === '/admin' || path.startsWith('/admin/') || path === '/account'));
+  // A page can also ask for stylesheets of its own: include('partials/head', { styles: ['/landing.css'] })
+  const sheets = [...new Set([...(adminFrame ? ['/admin.css'] : []), ...(locals.styles || [])])];
+  const bodyClasses = [locals.bodyClass, adminFrame ? 'ad-shell' : ''].filter(Boolean).join(' ');
+%>
+<% sheets.forEach((href) => { %>  <link rel="stylesheet" href="<%= href %>">
 <% }) %></head>
 <%# Every page sits on one of the apartment photos (style.css: body::before). %>
-<body class="<%= locals.bodyClass || '' %>" style="--page-photo: url('<%= photo(1) %>')">
+<body class="<%= bodyClasses %>" style="--page-photo: url('<%= photo(1) %>')">
 <%
   const links = !user
     ? [['/', 'Home'], ['/login', 'Log in'], ['/register', 'Register']]
@@ -35,4 +42,5 @@
   <%- include('theme_toggle') %>
 </header>
 <main class="wrap">
+<% if (adminFrame) { %><%- include('admin_shell', { title }) %><% } %>
 <% if (flash) { %><div class="flash <%= flash.type === 'ok' ? 'ok' : 'error' %>" role="status"><%= flash.text %></div><% } %>

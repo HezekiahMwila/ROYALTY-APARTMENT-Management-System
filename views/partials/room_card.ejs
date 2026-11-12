@@ -1,12 +1,15 @@
 <%
-  // One room button: room number and bedspaces remaining.
+  // One room tile: room number, a dot for each bedspace (filled when taken), and how many remain.
   const left = r.capacity - r.occupants;
   const lastLine = r.status === 'reserved' ? 'Reserved'
     : left <= 0 ? 'Full'
     : `${left} bedspace${left === 1 ? '' : 's'} remaining`;
   const href = locals.href;
 %>
-<% if (href) { %><a class="room <%= r.status %>" href="<%= href %>"><% } else { %><div class="room <%= r.status %>"><% } %>
-  <b>Room <%= r.id %></b>
+<% if (href) { %><a class="room <%= r.status %>" href="<%= href %>" data-status="<%= r.status %>"><% } else { %><div class="room <%= r.status %>" data-status="<%= r.status %>"><% } %>
+  <span class="room-top">
+    <b>Room <%= r.id %></b>
+    <span class="room-beds" aria-hidden="true"><% for (let i = 0; i < r.capacity; i++) { %><i class="<%= i < r.occupants ? 'taken' : '' %>"></i><% } %></span>
+  </span>
   <span class="left"><%= lastLine %></span>
 <% if (href) { %></a><% } else { %></div><% } %>

@@ -202,7 +202,17 @@ app.use((req, res, next) => {
   const settings = Object.fromEntries(db.all('SELECT key, value FROM settings').map((s) => [s.key, s.value]));
   req.settings = settings;
 
+  // How many things are waiting for the admin, shown beside Payments and Problems in the
+  // admin side menu on every admin page.
+  const waitingCounts = req.user && req.user.role === 'admin'
+    ? {
+        payments: db.get(`SELECT COUNT(*) AS n FROM payments WHERE status = 'pending'`).n,
+        problems: db.get(`SELECT COUNT(*) AS n FROM problems WHERE status <> 'resolved'`).n,
+      }
+    : null;
+
   Object.assign(res.locals, {
+    waitingCounts,
     user: req.user,
     flash: flashMsg,
     path: req.path,
@@ -560,7 +570,17 @@ app.get('/admin', admin, (req, res) => {
       pendingPayments: db.get(`SELECT COUNT(*) AS n FROM payments WHERE status = 'pending'`).n,
       openProblems: db.get(`SELECT COUNT(*) AS n FROM problems WHERE status <> 'resolved'`).n,
       collected: db.get(`SELECT COALESCE(SUM(amount), 0) AS t FROM payments WHERE status = 'approved' AND period = ?`, now().slice(0, 7)).t,
+      noRoom: db.get(`SELECT COUNT(*) AS n FROM users WHERE role = 'student' AND room_id IS NULL`).n,
     },
+    // The newest few things waiting for the admin, shown under "Needs your attention".
+    waitingPayments: db.all(
+      `SELECT p.id, p.amount, p.period, p.room_id, p.created_at, u.name FROM payments p JOIN users u ON u.id = p.user_id
+       WHERE p.status = 'pending' ORDER BY p.id DESC LIMIT 4`
+    ),
+    waitingProblems: db.all(
+      `SELECT p.id, p.category, p.status, p.room_id, p.created_at, u.name FROM problems p JOIN users u ON u.id = p.user_id
+       WHERE p.status <> 'resolved' ORDER BY p.id DESC LIMIT 4`
+    ),
   });
 });
 

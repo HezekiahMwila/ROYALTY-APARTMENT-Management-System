@@ -37,10 +37,9 @@
   })();
 </script>
 
-<%# ----- the logo opening: the house appears, then the full logo is uncovered ----- %>
+<%# ----- the logo opening: the full logo springs up, then the page lifts into view ----- %>
 <div class="ld-splash" aria-hidden="true">
   <div class="ld-splash-stage">
-    <img class="ld-splash-mark" src="/favicon.svg" alt="" width="120" height="120">
     <img class="ld-splash-logo" src="/logo.svg" alt="" width="1757" height="1067">
   </div>
 </div>
@@ -76,7 +75,7 @@
         <line class="ld-spark" pathLength="100" x1="50" y1="50" x2="<%= SPOTS[i][0] %>" y2="<%= SPOTS[i][1] %>" style="--i:<%= i %>"/>
       <% }) %>
     </svg>
-    <div class="ld-hub"><img src="/favicon.svg" alt="" width="64" height="64"></div>
+    <div class="ld-hub"><img src="/logo.svg" alt="" width="1757" height="1067"></div>
     <ul class="ld-nodes" aria-label="What we offer">
       <% around.forEach((s, i) => { %>
         <li class="ld-node" style="--x:<%= SPOTS[i][0] %>%; --y:<%= SPOTS[i][1] %>%; --i:<%= i %>"><span class="ld-node-icon"><%- icon(s) %></span><span class="ld-node-label"><%= s %></span></li>

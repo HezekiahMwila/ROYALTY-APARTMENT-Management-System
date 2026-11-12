@@ -1,23 +1,203 @@
+<%# Admin landing page, laid out as a dashboard: a main column (greeting, shortcuts, figures,
+    occupancy, every room) and a side column (today, what is waiting, rooms by kind).
+    The side menu and top row around it come from partials/admin_shell.ejs, which
+    partials/head.ejs adds to every admin page. Styles are in /admin.css and the small
+    behaviours (arriving, counting up, room filter) in /admin.js. The figures come from the
+    "/admin" route in server.js. %>
 <%- include('../partials/head', { title: 'Admin overview' }) %>
-<%# The summary cards float on an apartment picture. %>
-<div class="banner" style="background-image:url('<%= photo(0) %>')">
-  <div class="banner-head">
-    <h1>Admin overview</h1>
-    <p>Royalty Apartments · <%= rooms.length %> rooms</p>
+<%
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const now = new Date();
+  const today = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const shortDate = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const firstName = user.name.split(' ')[0];
+  const waiting = stats.pendingPayments + stats.openProblems;
+  const percent = stats.beds ? Math.round((stats.students / stats.beds) * 100) : 0;
+  const count = (status) => rooms.filter((r) => r.status === status).length;
+  const kinds = [['vacant', 'Vacant'], ['available', 'Space available'], ['full', 'Full'], ['reserved', 'Reserved']];
+  const most = Math.max(1, ...kinds.map(([status]) => count(status)));
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+  // Pictures used more than once on the page.
+  const ICON = {
+    home: '<path d="M3.500 11 12 4l8.500 7M5.500 9.500V20h13V9.500M10 20v-5.500h4V20"/>',
+    students: '<circle cx="9" cy="8" r="3.500"/><path d="M2.500 20c.5-3.600 3.100-5.500 6.500-5.500s6 1.900 6.500 5.500M16 4.800a3.500 3.500 0 0 1 0 6.400M18.500 14.800c1.800.7 2.800 2.400 3 5.200"/>',
+    payments: '<rect x="2.500" y="5.500" width="19" height="13" rx="2.500"/><path d="M2.500 10h19M6.500 15h4"/>',
+    problems: '<path d="M12 3.500 2.500 20h19L12 3.500ZM12 10v4.500"/><circle cx="12" cy="17.200" r=".6" fill="currentColor"/>',
+    ratings: '<path d="m12 3.500 2.600 5.400 5.900.8-4.300 4.100 1 5.900L12 16.900l-5.200 2.800 1-5.900-4.300-4.100 5.900-.8L12 3.500Z"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.800v2.400M12 18.800v2.400M2.800 12h2.400M18.800 12h2.400M5.500 5.500l1.700 1.700M16.800 16.800l1.700 1.700M18.500 5.500l-1.700 1.700M7.200 16.800l-1.700 1.700"/>',
+    account: '<circle cx="12" cy="8" r="3.800"/><path d="M4.500 20c.6-3.900 3.600-6 7.500-6s6.900 2.100 7.500 6"/>',
+    logout: '<path d="M14 4.500h3.500a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14M10 8l-4 4 4 4M6 12h9"/>',
+    bed: '<path d="M3 18v-6.500a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2V18M3 15h18M6 9.500V7.500a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2M3 18v2M21 18v2"/>',
+    money: '<circle cx="12" cy="12" r="9"/><path d="M15 9.200c-.5-1-1.600-1.700-3-1.700-1.800 0-3 1-3 2.300 0 3 6 1.400 6 4.400 0 1.300-1.200 2.300-3 2.300-1.400 0-2.500-.7-3-1.700M12 5.800v1.700M12 16.500v1.700"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    calendar: '<rect x="3.500" y="5" width="17" height="15.500" rx="2.500"/><path d="M3.500 10h17M8 3v4M16 3v4"/>',
+    tick: '<circle cx="12" cy="12" r="9"/><path d="m8 12.500 2.800 2.800L16.500 9.500"/>',
+  };
+  const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
+%>
+<script>
+  // Switch the arriving animations on before anything is drawn, unless the visitor prefers
+  // less motion. Without scripts the page is simply shown whole.
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('anim');
+</script>
+
+<div class="ad-layout">
+  <div class="ad-main">
+
+    <%# ----- greeting ----- %>
+    <header class="ad-head" data-in>
+      <h1><%= greeting %>, <em><%= firstName %></em> !</h1>
+      <p>Rooms, students, payments and problems at Royalty Apartments, all in one place.</p>
+    </header>
+
+    <%# ----- shortcuts ----- %>
+    <div class="ad-chips" data-in>
+      <a href="/admin/students"><i class="green"></i>Students</a>
+      <a href="/admin/payments">Payments<% if (stats.pendingPayments) { %><b><%= stats.pendingPayments %></b><% } %></a>
+      <a href="/admin/problems">Problems<% if (stats.openProblems) { %><b><%= stats.openProblems %></b><% } %></a>
+      <a href="/admin/settings">Settings</a>
+      <a class="ad-new" href="/admin/students"><%- icon('plus') %>Add student</a>
+    </div>
+
+    <%# ----- today's figures ----- %>
+    <div class="ad-stats">
+      <div class="ad-stat" data-in>
+        <span class="ad-stat-icon"><%- icon('home') %></span>
+        <b data-count="<%= stats.vacant %>"><%= stats.vacant %></b>
+        <span>Vacant rooms</span>
+      </div>
+      <a class="ad-stat <%= stats.pendingPayments ? 'alert' : '' %>" data-in href="/admin/payments?status=pending">
+        <span class="ad-stat-icon"><%- icon('payments') %></span>
+        <b data-count="<%= stats.pendingPayments %>"><%= stats.pendingPayments %></b>
+        <span>Payments to review</span>
+      </a>
+      <a class="ad-stat <%= stats.openProblems ? 'alert' : '' %>" data-in href="/admin/problems">
+        <span class="ad-stat-icon"><%- icon('problems') %></span>
+        <b data-count="<%= stats.openProblems %>"><%= stats.openProblems %></b>
+        <span>Open problems</span>
+      </a>
+      <div class="ad-stat" data-in>
+        <span class="ad-stat-icon"><%- icon('money') %></span>
+        <b class="money"><%= money(stats.collected) %></b>
+        <span>Approved for this month</span>
+      </div>
+    </div>
+
+    <%# ----- how full the building is: the highlighted card ----- %>
+    <a class="ad-feature" data-in href="/admin/students">
+      <div class="ad-feature-head">
+        <span class="ad-feature-icon"><%- icon('bed') %></span>
+        <div>
+          <h2>Occupancy</h2>
+          <p><b data-count="<%= stats.students %>"><%= stats.students %></b> of <%= stats.beds %> bedspaces are taken across <%= rooms.length %> rooms.</p>
+        </div>
+      </div>
+      <div class="ad-feature-foot">
+        <div class="ad-tags">
+          <span>Rooms :</span>
+          <% kinds.forEach(([status, label]) => { if (count(status)) { %><em><%= count(status) %> <%= label.toLowerCase() %></em><% } }) %>
+          <% if (stats.noRoom) { %><em class="warn"><%= plural(stats.noRoom, 'student') %> without a room</em><% } %>
+        </div>
+        <div class="ad-progress" role="img" aria-label="<%= percent %> percent of bedspaces taken">
+          <span>Taken :</span>
+          <div class="ad-progress-bar"><i style="--w:<%= percent %>%"></i></div>
+          <b>%<span data-count="<%= percent %>"><%= percent %></span></b>
+        </div>
+      </div>
+    </a>
+
+    <%# ----- every room ----- %>
+    <section class="ad-card ad-rooms" data-in>
+      <div class="ad-card-head">
+        <h2>Rooms <small>click a room to edit its occupants</small></h2>
+        <div class="ad-filter" role="group" aria-label="Show rooms">
+          <button type="button" class="on" data-filter="all" aria-pressed="true">All <b><%= rooms.length %></b></button>
+          <% kinds.forEach(([status, label]) => { if (count(status)) { %>
+            <button type="button" data-filter="<%= status %>" aria-pressed="false"><%= label %> <b><%= count(status) %></b></button>
+          <% } }) %>
+        </div>
+      </div>
+      <div class="rooms">
+        <% rooms.forEach(r => { %>
+          <%- include('../partials/room_card', { r, href: '/admin/rooms/' + r.id }) %>
+        <% }) %>
+      </div>
+      <p class="ad-empty" data-none hidden>No rooms of that kind.</p>
+    </section>
   </div>
-  <div class="stats">
-    <div class="stat"><b><%= stats.vacant %></b><span>Vacant rooms</span></div>
-    <a class="stat" href="/admin/students"><b><%= stats.students %> / <%= stats.beds %></b><span>Bedspaces taken</span></a>
-    <a class="stat" href="/admin/payments?status=pending"><b><%= stats.pendingPayments %></b><span>Payments to review</span></a>
-    <a class="stat" href="/admin/problems"><b><%= stats.openProblems %></b><span>Open problems</span></a>
-    <div class="stat"><b><%= money(stats.collected) %></b><span>Approved for this month</span></div>
-  </div>
+
+  <aside class="ad-rail">
+    <%# ----- today ----- %>
+    <section class="ad-card ad-today" data-in>
+      <div class="ad-card-head"><h2>Today</h2><span class="ad-round"><%- icon('calendar') %></span></div>
+      <p class="ad-today-note <%= waiting ? 'busy' : 'clear' %>">
+        <% if (waiting) { %>
+          <b><%= plural(waiting, 'thing') %></b> waiting for you:
+          <%= [stats.pendingPayments ? plural(stats.pendingPayments, 'payment') + ' to review' : '', stats.openProblems ? plural(stats.openProblems, 'open problem') : ''].filter(Boolean).join(' and ') %>.
+        <% } else { %>
+          Everything is <b>up to date</b>. No payments to review and no open problems.
+        <% } %>
+      </p>
+      <div class="ad-today-foot">
+        <span><%- icon('calendar') %><%= today %></span>
+        <% if (stats.pendingPayments) { %><a href="/admin/payments?status=pending">Review</a><% } else if (stats.openProblems) { %><a href="/admin/problems">Open</a><% } %>
+      </div>
+    </section>
+
+    <%# ----- what is waiting for the admin ----- %>
+    <section class="ad-card" data-in>
+      <div class="ad-card-head"><h2>Needs your attention</h2><% if (waiting) { %><span class="ad-pill"><%= waiting %></span><% } %></div>
+      <% if (!waitingPayments.length && !waitingProblems.length) { %>
+        <div class="ad-empty-box">
+          <span><%- icon('tick') %></span>
+          <p>Nothing is waiting. Every payment has been reviewed and there are no open problems.</p>
+        </div>
+      <% } else { %>
+        <ul class="ad-todo">
+          <% waitingPayments.forEach(p => { %>
+            <li><a href="/admin/payments?status=pending">
+              <span class="ad-todo-icon"><%- icon('payments') %></span>
+              <span class="ad-todo-text"><b><%= p.name %> sent <%= money(p.amount) %></b><small>Rent for <%= fmtPeriod(p.period) %><%= p.room_id ? ' · Room ' + p.room_id : '' %> · <%= fmtDate(p.created_at) %></small></span>
+            </a></li>
+          <% }) %>
+          <% waitingProblems.forEach(p => { %>
+            <li><a href="/admin/problems">
+              <span class="ad-todo-icon red"><%- icon('problems') %></span>
+              <span class="ad-todo-text"><b><%= p.category %></b><small><%= p.name %><%= p.room_id ? ' · Room ' + p.room_id : '' %> · <%= fmtDate(p.created_at) %></small></span>
+            </a></li>
+          <% }) %>
+        </ul>
+        <% const more = waiting - waitingPayments.length - waitingProblems.length; %>
+        <% if (more > 0) { %><p class="ad-more">and <%= more %> more on the Payments and Problems pages.</p><% } %>
+      <% } %>
+      <div class="ad-card-foot">
+        <span>Go to :</span>
+        <a href="/admin/payments" title="Payments" aria-label="Payments"><%- icon('payments') %></a>
+        <a href="/admin/problems" title="Problems" aria-label="Problems"><%- icon('problems') %></a>
+        <a href="/admin/ratings" title="Ratings" aria-label="Ratings"><%- icon('ratings') %></a>
+        <a class="wide" href="/admin/students"><%- icon('plus') %>Add student</a>
+      </div>
+    </section>
+
+    <%# ----- rooms by kind, as a small chart ----- %>
+    <section class="ad-card" data-in>
+      <div class="ad-card-head"><h2>Rooms by kind</h2><a class="ad-report" href="/admin/students">Students<span>&#8599;</span></a></div>
+      <p class="ad-chart-note"><%= stats.vacant %> of <%= rooms.length %> rooms are vacant</p>
+      <div class="ad-chart" role="img" aria-label="<%= kinds.map(([status, label]) => count(status) + ' ' + label.toLowerCase()).join(', ') %>">
+        <% kinds.forEach(([status, label]) => { const n = count(status); %>
+          <div class="ad-chart-col <%= n === most ? 'most' : '' %>">
+            <b><%= n %></b>
+            <div class="ad-chart-bar"><i style="--h:<%= Math.round((n / most) * 100) %>%"></i></div>
+            <span><%= label === 'Space available' ? 'Space' : label %></span>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+  </aside>
 </div>
 
-<h2>Rooms <span class="muted small">· click a room to edit its occupants</span></h2>
-<div class="rooms">
-  <% rooms.forEach(r => { %>
-    <%- include('../partials/room_card', { r, href: '/admin/rooms/' + r.id }) %>
-  <% }) %>
-</div>
+<%# If the script cannot load, switch the animations back off so nothing stays hidden. %>
+<script src="/admin.js" onerror="document.documentElement.classList.remove('anim')"></script>
 <%- include('../partials/foot') %>
