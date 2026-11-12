@@ -27,6 +27,7 @@
       <% links.forEach(([href, label], i) => { %>
         <a href="<%= href %>" class="<%= isOn(href) ? 'on' : '' %>" style="--i:<%= i %>" <%- isOn(href) ? 'aria-current="page"' : '' %>><%= label %></a>
       <% }) %>
+      <button class="btn install" type="button" data-install hidden>Install app</button>
       <% if (user) { %><form method="post" action="/logout"><button class="logout" type="submit">Log out</button></form><% } %>
     </nav>
   </details>

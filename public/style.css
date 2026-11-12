@@ -256,6 +256,8 @@ p { margin: 0 0 12px; }
 .menu-panel a.on::before { height: 55%; background: #fff; }
 .menu-panel form { margin: 6px 0 0; padding-top: 9px; border-top: 1px solid var(--line); }
 .menu-panel .logout { width: 100%; }
+/* "Install app": shown by app.js only when the browser can install the site as an app */
+.menu-panel .install { width: 100%; margin-top: 8px; --clay: var(--red); --clay-drop: rgba(242, 13, 29, .5); }
 
 .wrap { width: 100%; max-width: 1100px; margin: 0 auto; padding: 28px 16px 56px; flex: 1; }
 .narrow { max-width: 440px; margin: 28px auto; }

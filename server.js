@@ -20,6 +20,12 @@ const PROBLEM_STATUSES = ['open', 'in_progress', 'resolved'];
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// The app's service worker must never be cached by the browser, or phones would keep running
+// an old version of it. The manifest is checked for updates on every visit too.
+app.get(['/sw.js', '/manifest.webmanifest'], (req, res, next) => {
+  res.set('Cache-Control', 'no-cache');
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: false }));
 
