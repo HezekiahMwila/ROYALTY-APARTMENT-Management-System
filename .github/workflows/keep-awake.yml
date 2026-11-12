@@ -1,0 +1,39 @@
+# Keeps the Render site awake.
+# Render's free plan puts the site to sleep after 15 minutes without visitors, and the next
+# visitor then waits about a minute on Render's "waking up" page. This visits the site every
+# 10 minutes so it never gets that far.
+#
+# Notes:
+# - GitHub may start scheduled runs a few minutes late when it is busy, so the site can still
+#   fall asleep now and then.
+# - GitHub pauses schedules in a repository with no commits for 60 days. To switch it back on:
+#   Actions tab > "Keep site awake" > "Enable workflow".
+# - To run it by hand: Actions tab > "Keep site awake" > "Run workflow".
+name: Keep site awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes (times are UTC)
+  workflow_dispatch:
+
+permissions: {}              # this job only visits the website; it needs no access to the repository
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Visit the site
+        env:
+          SITE_URL: https://royalty-apartments.onrender.com/login
+        run: |
+          # A sleeping site can take about a minute to answer, so allow up to 2 minutes per
+          # try and retry a few times before reporting a failure.
+          for attempt in 1 2 3; do
+            code=$(curl --silent --output /dev/null --max-time 120 --write-out '%{http_code}' "$SITE_URL" || true)
+            echo "Attempt $attempt: HTTP $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 20
+          done
+          echo "::error::The site did not answer with 200 after 3 tries."
+          exit 1
