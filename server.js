@@ -610,10 +610,8 @@ app.get('/admin', admin, (req, res) => {
 app.get('/admin/rooms/:id', admin, async (req, res) => {
   const room = getRoom(int(req.params.id));
   if (!room) return res.status(404).render('message', { title: 'Not found', text: 'That room does not exist.' });
+  // The room's link: what its QR code holds. It is not shown on the page, printed or downloaded.
   const checkinUrl = publicOrigin(req) + roomLinkPath(room);
-  // The link as printed under the QR code, for typing: without "https://", which browsers add
-  // by themselves. A plain http address (a computer on the local Wi-Fi) keeps its "http://".
-  const typedLink = checkinUrl.replace(/^https:\/\//, '');
   // The QR code is sent as a picture (<img>), not drawn into the page, so the page's own styles
   // (such as the admin menu's line-icon style) cannot reshape its squares and make it unreadable.
   // margin: 4 is the white border QR readers expect around the code.
@@ -625,8 +623,6 @@ app.get('/admin/rooms/:id', admin, async (req, res) => {
   };
   res.render('admin/room', {
     room,
-    checkinUrl,
-    typedLink,
     qr,
     occupants: db.all(`SELECT id, name, student_no, phone, email, checked_in_at FROM users WHERE room_id = ? ORDER BY name`, room.id),
     unassigned: db.all(`SELECT id, name, student_no FROM users WHERE role = 'student' AND room_id IS NULL ORDER BY name`),

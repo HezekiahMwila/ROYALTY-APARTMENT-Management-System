@@ -517,11 +517,7 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
 .qr { width: 240px; max-width: 100%; margin: 6px auto 0; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
 .qr img { display: block; width: 100%; height: auto; }
 .qr-room { font-size: 1.5rem; font-weight: 800; color: var(--heading); margin: 10px 0 2px; }
-/* the room link under the QR code, for phones that cannot scan */
-.qr-linkbox { margin: 8px auto 10px; padding: 10px 14px; max-width: 340px; border-radius: 12px; border: 1px dashed var(--line); }
-.qr-linkbox span { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 2px; }
-.qr-link { display: block; font-family: Consolas, "Courier New", monospace; font-size: .95rem; color: var(--heading); word-break: break-all; user-select: all; }
-.qr-code { margin: 0 0 8px; color: var(--muted); }
+.qr-code { margin: 6px 0 10px; color: var(--muted); }
 .qr-code b { font-family: Consolas, "Courier New", monospace; font-size: 1.25rem; letter-spacing: .18em; color: var(--red-ink); }
 
 /* ---------- student scan page ---------- */
@@ -840,8 +836,7 @@ details:not(.menu) summary:hover { color: var(--blue-ink); }
   .qr-card h2 { text-align: center; font-size: 1.6rem; }
   .qr { width: 360px; box-shadow: none; }
   .qr-room { font-size: 2.4rem; }
-  /* The printed card shows only the QR code, the room and its code: no link. */
-  .qr-linkbox { display: none !important; }
+  /* The printed card shows only the QR code, the room and its code. */
   .qr-code { font-size: 1.4rem; margin-top: 6px; }
   .qr-code b { font-size: 2rem; }
 }

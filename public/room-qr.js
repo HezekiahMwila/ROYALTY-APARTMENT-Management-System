@@ -1,10 +1,13 @@
-// Admin room page: the Download button saves a picture of the room card, ready to print or send:
-// the logo, "Room 12", the QR code and the room code (no link).
+// Admin room page: the Download button saves the room's QR code as a picture laid out exactly like
+// the printed page: "Room 12 QR code" at the top, the QR code, "Room 12", and "Code: ABC234",
+// in black on white. (The printed layout is the @media print part of style.css.)
 // The button's own link (the plain QR code picture) is the fallback if anything here fails.
 (function () {
-  var W = 1200, H = 1560, BLUE = '#123fdc', RED = '#f20d1d', INK = '#111111', GREY = '#555555';
+  // The printed page, scaled up 2.5 times so the picture prints sharply.
+  var S = 2.5;
+  var W = 1000, H = 1380, INK = '#000000';
   var FONT = '"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif';
-  var MONO = 'Consolas, "Courier New", monospace';
+  var MONO = 'Consolas, "Courier New", monospace'; // the code's letters, as on the printed page
 
   function load(src) {
     return new Promise(function (resolve, reject) {
@@ -15,55 +18,53 @@
     });
   }
 
-  function centre(ctx, text, y) { ctx.fillText(text, W / 2, y); }
+  // Text centred on the page, with optional space between the letters (as the printed code has).
+  function centred(ctx, parts, y) {
+    var widths = parts.map(function (p) {
+      ctx.font = p.font;
+      var gap = p.spacing || 0;
+      return p.text.split('').reduce(function (w, ch) { return w + ctx.measureText(ch).width + gap; }, 0) - gap;
+    });
+    var x = (W - widths.reduce(function (a, b) { return a + b; }, 0)) / 2;
+    ctx.textAlign = 'left';
+    parts.forEach(function (p, i) {
+      ctx.font = p.font;
+      ctx.fillStyle = INK;
+      var gap = p.spacing || 0, cx = x;
+      p.text.split('').forEach(function (ch) { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + gap; });
+      x += widths[i];
+    });
+  }
 
   async function draw(btn) {
     var room = btn.getAttribute('data-room');
     var code = btn.getAttribute('data-code');
     var qr = await load(btn.getAttribute('href'));
-    var logo = await load('/logo.svg').catch(function () { return null; });
 
     var canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, H);
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
 
-    // brand stripe: blue and red, as on the site
-    ctx.fillStyle = BLUE; ctx.fillRect(0, 0, W, 18);
-    ctx.fillStyle = RED; ctx.fillRect(0, 18, W, 8);
+    // "Room 12 QR code", small, at the top
+    centred(ctx, [{ text: 'Room ' + room + ' QR code', font: '600 ' + Math.round(16 * S) + 'px ' + FONT }], 34 * S);
 
-    var y = 70;
-    if (logo) {
-      var lw = 330, lh = lw * (logo.naturalHeight || 1067) / (logo.naturalWidth || 1757);
-      ctx.drawImage(logo, (W - lw) / 2, y, lw, lh);
-      y += lh + 40;
-    } else {
-      ctx.fillStyle = BLUE; ctx.font = '700 64px ' + FONT; centre(ctx, 'Royalty Apartments', y + 60); y += 110;
-    }
-
-    ctx.fillStyle = INK; ctx.font = '800 110px ' + FONT;
-    centre(ctx, 'Room ' + room, y + 95); y += 135;
-
-    var qs = 820;
+    // the QR code (360px on the printed page), with its own white border
+    var qs = 360 * S, qy = 52 * S;
     ctx.imageSmoothingEnabled = false; // keep the squares sharp
-    ctx.drawImage(qr, (W - qs) / 2, y, qs, qs);
+    ctx.drawImage(qr, (W - qs) / 2, qy, qs, qs);
     ctx.imageSmoothingEnabled = true;
-    y += qs + 60;
 
-    // the room code, large, under the QR code
-    var spaced = code.split('').join(' ');
-    ctx.fillStyle = GREY; ctx.font = '500 44px ' + FONT;
-    var label = 'Room code: ';
-    var lwid = ctx.measureText(label).width;
-    ctx.font = '700 72px ' + MONO;
-    var cwid = ctx.measureText(spaced).width;
-    var x0 = (W - lwid - cwid) / 2;
-    ctx.textAlign = 'left';
-    ctx.fillStyle = GREY; ctx.font = '500 44px ' + FONT; ctx.fillText(label, x0, y + 60);
-    ctx.fillStyle = RED; ctx.font = '700 72px ' + MONO; ctx.fillText(spaced, x0 + lwid, y + 60);
+    // "Room 12", large and bold
+    centred(ctx, [{ text: 'Room ' + room, font: '700 ' + Math.round(38 * S) + 'px ' + FONT }], qy + qs + 54 * S);
+
+    // "Code: ABC234": the label plain, the code bold with its letters spaced out
+    centred(ctx, [
+      { text: 'Code: ', font: '400 ' + Math.round(22 * S) + 'px ' + FONT },
+      { text: code, font: '700 ' + Math.round(32 * S) + 'px ' + MONO, spacing: 0.18 * 32 * S },
+    ], qy + qs + 104 * S);
 
     return new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
   }
