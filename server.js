@@ -588,10 +588,19 @@ app.get('/admin/rooms/:id', admin, async (req, res) => {
   const room = getRoom(int(req.params.id));
   if (!room) return res.status(404).render('message', { title: 'Not found', text: 'That room does not exist.' });
   const checkinUrl = `${publicOrigin(req)}/checkin/${room.id}?code=${room.qr_code}`;
+  // The QR code is sent as a picture (<img>), not drawn into the page, so the page's own styles
+  // (such as the admin menu's line-icon style) cannot reshape its squares and make it unreadable.
+  // margin: 4 is the white border QR readers expect around the code.
+  const qrOptions = { margin: 4, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#ffffff' } };
+  const qr = room.status === 'reserved' ? null : {
+    svg: 'data:image/svg+xml;base64,' + Buffer.from(await QRCode.toString(checkinUrl, { ...qrOptions, type: 'svg' })).toString('base64'),
+    // A large picture the admin can download to print or send.
+    png: await QRCode.toDataURL(checkinUrl, { ...qrOptions, width: 1024 }),
+  };
   res.render('admin/room', {
     room,
     checkinUrl,
-    qr: room.status === 'reserved' ? null : await QRCode.toString(checkinUrl, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' }),
+    qr,
     occupants: db.all(`SELECT id, name, student_no, phone, email, checked_in_at FROM users WHERE room_id = ? ORDER BY name`, room.id),
     unassigned: db.all(`SELECT id, name, student_no FROM users WHERE role = 'student' AND room_id IS NULL ORDER BY name`),
   });

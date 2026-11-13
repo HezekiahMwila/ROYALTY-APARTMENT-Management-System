@@ -512,8 +512,10 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
 .qr-card { text-align: center; }
 .qr-card h2 { text-align: left; }
 .qr-card p.no-print { text-align: left; }
-.qr { width: 220px; max-width: 100%; margin: 6px auto 0; padding: 10px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
-.qr svg { display: block; width: 100%; height: auto; }
+/* The QR code is a picture with its own white border (server.js), always black on white
+   in both themes, as QR readers need. */
+.qr { width: 240px; max-width: 100%; margin: 6px auto 0; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
+.qr img { display: block; width: 100%; height: auto; }
 .qr-room { font-size: 1.5rem; font-weight: 800; color: var(--heading); margin: 10px 0 2px; }
 .qr-link { word-break: break-all; }
 .qr-code { margin: 0 0 8px; color: var(--muted); }
@@ -823,12 +825,17 @@ details:not(.menu) summary:hover { color: var(--blue-ink); }
 
 /* ---------- printing: the room page prints only the QR code card ---------- */
 @media print {
-  body::before, .backdrop, .top, .foot, .flash, .page-head, .no-print, .card:not(.qr-card) { display: none !important; }
+  body::before, .backdrop, .top, .foot, .flash, .page-head, .no-print, .card:not(.qr-card),
+  .ad-side, .ad-top { display: none !important; }
   body { background: #fff; color: #000; }
   .grid2 { display: block; }
-  .qr-card { border: 0; box-shadow: none; background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .qr-card h2, .qr-room { color: #000; }
-  .qr { width: 360px; }
+  .wrap { margin: 0 auto !important; padding: 0 !important; }
+  /* !important: the admin pages' navy card style (admin.css) would otherwise print a dark card. */
+  .qr-card { border: 0 !important; box-shadow: none !important; background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .qr-card::before, .qr-card::after { display: none !important; }
+  .qr-card h2, .qr-room, .qr-code, .qr-code b { color: #000 !important; }
+  .qr-card h2 { text-align: center; font-size: 1.6rem; }
+  .qr { width: 360px; box-shadow: none; }
   .qr-room { font-size: 2.4rem; }
 }
 
