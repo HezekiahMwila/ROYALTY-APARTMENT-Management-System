@@ -519,6 +519,8 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
 .qr-room { font-size: 1.5rem; font-weight: 800; color: var(--heading); margin: 10px 0 2px; }
 .qr-code { margin: 6px 0 10px; color: var(--muted); }
 .qr-code b { font-family: Consolas, "Courier New", monospace; font-size: 1.25rem; letter-spacing: .18em; color: var(--red-ink); }
+/* the branded card picture that prints (room-qr.js); never shown on screen */
+.qr-print { display: none; }
 
 /* ---------- student scan page ---------- */
 .scanner { position: relative; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 12px; aspect-ratio: 4 / 3; }
@@ -839,6 +841,11 @@ details:not(.menu) summary:hover { color: var(--blue-ink); }
   /* The printed card shows only the QR code, the room and its code. */
   .qr-code { font-size: 1.4rem; margin-top: 6px; }
   .qr-code b { font-size: 2rem; }
+  /* Normally the branded card picture is ready (room-qr.js): print just that, the same as the
+     downloaded one. The layout above is only the fallback when it could not be drawn. */
+  .qr-card.print-ready > :not(.qr-print) { display: none !important; }
+  .qr-card.print-ready { padding: 0 !important; }
+  .qr-card.print-ready .qr-print { display: block !important; width: 14cm; max-width: 100%; height: auto; margin: 0 auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
