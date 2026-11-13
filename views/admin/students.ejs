@@ -18,12 +18,21 @@
       </div>
       <div class="row">
         <div>
-          <label for="room_id">Room</label>
-          <select id="room_id" name="room_id">
-            <option value="">No room yet</option>
-            <% rooms.forEach(r => { %><option value="<%= r.id %>">Room <%= r.id %> (<%= r.capacity - r.occupants %> free)</option><% }) %>
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender" required>
+            <option value="">Choose…</option>
+            <% Object.entries(GENDERS).forEach(([value, g]) => { %><option value="<%= value %>"><%= g.label %></option><% }) %>
           </select>
         </div>
+        <div>
+          <label for="room_id">Room <span class="opt">(only rooms for their gender are accepted)</span></label>
+          <select id="room_id" name="room_id">
+            <option value="">No room yet</option>
+            <% rooms.forEach(r => { %><option value="<%= r.id %>">Room <%= r.id %> (<%= r.capacity - r.occupants %> free<%= r.for ? ', ' + GENDERS[r.for].group + ' only' : '' %>)</option><% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="row">
         <div>
           <label for="password">Starting password <span class="opt">(at least 6 characters)</span></label>
           <input id="password" name="password" type="text" autocomplete="off" minlength="6" required>
@@ -37,11 +46,12 @@
 <div class="card table-wrap">
   <% if (!students.length) { %><p class="empty">No students have registered yet.</p><% } else { %>
   <table>
-    <thead><tr><th>Name</th><th>Student no.</th><th>Contact</th><th>Room</th><th>Rating</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Gender</th><th>Student no.</th><th>Contact</th><th>Room</th><th>Rating</th><th></th></tr></thead>
     <tbody>
       <% students.forEach(s => { %>
         <tr>
           <td><b><%= s.name %></b></td>
+          <td><% if (GENDERS[s.gender]) { %><span class="badge <%= s.gender %>"><%= GENDERS[s.gender].label %></span><% } else { %><span class="badge pending">Not given</span><% } %></td>
           <td><%= s.student_no || '—' %></td>
           <td><%= s.email %><br><span class="muted"><%= s.phone %></span></td>
           <td><% if (s.room_id) { %><a href="/admin/rooms/<%= s.room_id %>">Room <%= s.room_id %></a><% } else { %><span class="badge">No room</span><% } %></td>

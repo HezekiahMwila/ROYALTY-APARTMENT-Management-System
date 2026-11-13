@@ -1,0 +1,28 @@
+<%# One roommate's contact details, for emergencies: picture, name, phone (tap to call or text),
+    email and student number. Pass m (from roommatesOf in server.js). %>
+<%
+  const initials = m.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  const tel = (m.phone || '').replace(/[^\d+]/g, '');
+%>
+<div class="mate">
+  <% if (m.photo) { %>
+    <img class="avatar mate-pic" src="/uploads/<%= m.photo %>" alt="Picture of <%= m.name %>" loading="lazy">
+  <% } else { %>
+    <div class="avatar placeholder mate-pic" aria-hidden="true"><%= initials %></div>
+  <% } %>
+  <div class="mate-info">
+    <b class="mate-name"><%= m.name %></b>
+    <dl class="mate-details">
+      <% if (m.phone) { %><dt>Phone</dt><dd><a href="tel:<%= tel %>"><%= m.phone %></a></dd><% } %>
+      <% if (m.email) { %><dt>Email</dt><dd><a href="mailto:<%= m.email %>"><%= m.email %></a></dd><% } %>
+      <% if (m.student_no) { %><dt>Student no.</dt><dd><%= m.student_no %></dd><% } %>
+      <% if (m.checked_in_at) { %><dt>Moved in</dt><dd><%= fmtDate(m.checked_in_at) %></dd><% } %>
+    </dl>
+    <% if (m.phone) { %>
+      <div class="actions-row mate-actions">
+        <a class="btn sm" href="tel:<%= tel %>">Call</a>
+        <a class="btn sm ghost" href="sms:<%= tel %>">Text</a>
+      </div>
+    <% } %>
+  </div>
+</div>

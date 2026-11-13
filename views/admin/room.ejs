@@ -1,7 +1,8 @@
 <%- include('../partials/head', { title: 'Room ' + room.id }) %>
 <div class="page-head">
   <p class="small"><a href="/admin">← All rooms</a></p>
-  <h1>Room <%= room.id %> <span class="badge <%= room.status %>"><%= statusLabel[room.status] %></span></h1>
+  <h1>Room <%= room.id %> <span class="badge <%= room.status %>"><%= statusLabel[room.status] %></span>
+    <% if (room.for) { %><span class="badge <%= room.for %>"><%= GENDERS[room.for].room %></span><% } %></h1>
   <p class="muted"><%= room.status === 'reserved' ? 'This room is reserved and not available to students.' : `${room.occupants} of ${room.capacity} bedspaces taken` %></p>
 </div>
 
@@ -13,7 +14,8 @@
       <div class="item">
         <div class="item-head">
           <div>
-            <b><%= o.name %></b><br>
+            <b><%= o.name %></b>
+            <% if (GENDERS[o.gender]) { %><span class="badge <%= o.gender %>"><%= GENDERS[o.gender].label %></span><% } else { %><span class="badge pending">Gender not given</span><% } %><br>
             <span class="muted small"><%= o.student_no || 'No student number' %> · <%= o.phone || o.email %></span><br>
             <% if (o.checked_in_at) { %>
               <span class="badge approved">Checked in <%= fmtDate(o.checked_in_at) %></span>
@@ -34,16 +36,21 @@
 
     <% if (room.status === 'vacant' || room.status === 'available') { %>
       <h2 style="margin-top:20px">Add an occupant</h2>
+      <% if (room.for) { %><p class="muted small">This room is for <%= GENDERS[room.for].group %> only, so only <%= GENDERS[room.for].group %> are listed.</p><% } %>
       <% if (!unassigned.length) { %>
-        <p class="muted small">There are no students without a room. <a href="/admin/students">Add a new student</a> or move one from their edit page.</p>
+        <p class="muted small">There are no <%= room.for ? GENDERS[room.for].group : 'students' %> without a room. <a href="/admin/students">Add a new student</a> or move one from their edit page.</p>
       <% } else { %>
         <form class="actions-row" method="post" action="/admin/rooms/<%= room.id %>/assign">
           <select name="user_id" aria-label="Student to add" required>
             <option value="">Choose a student…</option>
-            <% unassigned.forEach(u => { %><option value="<%= u.id %>"><%= u.name %><%= u.student_no ? ' (' + u.student_no + ')' : '' %></option><% }) %>
+            <% unassigned.forEach(u => { %><option value="<%= u.id %>"><%= u.name %> (<%= GENDERS[u.gender].label %><%= u.student_no ? ', ' + u.student_no : '' %>)</option><% }) %>
           </select>
           <button class="btn sm" type="submit">Add to room</button>
         </form>
+      <% } %>
+      <% if (noGender.length) { %>
+        <p class="muted small" style="margin-top:10px"><%= noGender.length %> student<%= noGender.length === 1 ? '' : 's' %> without a room cannot be placed until their gender is recorded:
+          <% noGender.forEach((u, i) => { %><a href="/admin/students/<%= u.id %>"><%= u.name %></a><%= i < noGender.length - 1 ? ', ' : '.' %><% }) %></p>
       <% } %>
     <% } %>
   </div>
@@ -77,6 +84,12 @@
         <p><b><%= room.capacity %> bedspaces</b> <span class="muted small">(fixed for this room)</span></p>
         <label for="rent">Monthly rent per student (<%= settings.currency %>)</label>
         <input id="rent" name="rent" type="number" min="0" step="0.01" value="<%= room.rent %>" required>
+        <label for="room-gender">Who this room is for</label>
+        <select id="room-gender" name="gender">
+          <option value="">Not set: <%= room.occupant_gender ? GENDERS[room.occupant_gender].group + ' (from who lives here)' : 'the first student to move in decides' %></option>
+          <% Object.entries(GENDERS).forEach(([value, g]) => { %><option value="<%= value %>" <%= room.gender === value ? 'selected' : '' %>><%= g.room %></option><% }) %>
+        </select>
+        <p class="muted small" style="margin-top:6px">A room never holds both girls and boys.</p>
         <button class="btn" type="submit">Save</button>
       </form>
     </div>

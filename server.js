@@ -94,16 +94,44 @@ function roomStatus(r) {
 }
 // Rooms a student can still be placed in.
 const isOpen = (r) => r.status === 'vacant' || r.status === 'available';
-const ROOM_SQL = `SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.room_id = r.id) AS occupants FROM rooms r`;
-const listRooms = () => db.all(`${ROOM_SQL} ORDER BY r.id`).map((r) => ({ ...r, status: roomStatus(r) }));
+
+// ---------- gender ----------
+// Every student gives their gender, and a room never holds both girls and boys. A room is for
+// girls or boys either because the caretaker marked it so (rooms.gender), or because of who is
+// already living in it; an empty, unmarked room takes whoever comes first.
+const GENDERS = {
+  female: { label: 'Female', room: 'Girls only', group: 'girls' },
+  male: { label: 'Male', room: 'Boys only', group: 'boys' },
+};
+const readGender = (v) => (GENDERS[v] ? v : null);
+
+const ROOM_SQL = `SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.room_id = r.id) AS occupants,
+  (SELECT u.gender FROM users u WHERE u.room_id = r.id AND u.gender IS NOT NULL LIMIT 1) AS occupant_gender
+  FROM rooms r`;
+// for: who the room is for right now ('female', 'male' or null when anyone may take it).
+const withStatus = (r) => ({ ...r, status: roomStatus(r), for: r.gender || r.occupant_gender || null });
+const listRooms = () => db.all(`${ROOM_SQL} ORDER BY r.id`).map(withStatus);
 function getRoom(id) {
   const r = db.get(`${ROOM_SQL} WHERE r.id = ?`, id);
-  return r ? { ...r, status: roomStatus(r) } : null;
+  return r ? withStatus(r) : null;
 }
 const roomHasSpace = (id) => { const r = getRoom(id); return !!r && isOpen(r); };
 
+// Why a student of this gender cannot live in this room, or null if they can.
+// exceptId: the student themself, when checking a room they are already in.
+function roomGenderProblem(room, gender, exceptId = 0) {
+  if (!GENDERS[gender]) return 'gender-missing';
+  if (room.gender && room.gender !== gender) return `Room ${room.id} is for ${GENDERS[room.gender].group} only.`;
+  const other = db.get(
+    `SELECT gender FROM users WHERE room_id = ? AND id <> ? AND gender IS NOT NULL AND gender <> ? LIMIT 1`,
+    room.id, exceptId, gender
+  );
+  if (other) return `Room ${room.id} already has ${GENDERS[other.gender].group} in it, so it is for ${GENDERS[other.gender].group} only.`;
+  return null;
+}
+
 // Validates and inserts a user. Returns an error message, or null on success.
-function createUser({ role, name, student_no, email, phone, password, room_id }) {
+function createUser({ role, name, student_no, email, phone, password, room_id, gender }) {
   if (!name) return 'Please enter a full name.';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
   if (password.length < 6) return 'Password must be at least 6 characters.';
@@ -111,12 +139,18 @@ function createUser({ role, name, student_no, email, phone, password, room_id })
   if (role === 'student') {
     if (!validPhone(phone || '')) return 'Please enter a valid phone number.';
     if (db.get('SELECT 1 AS x FROM users WHERE phone = ?', phone)) return 'That phone number is already registered.';
+    if (!GENDERS[gender]) return 'Please choose a gender.';
   }
-  if (room_id != null && !roomHasSpace(room_id)) return 'That room is full or not available. Please choose another.';
+  if (room_id != null) {
+    if (!roomHasSpace(room_id)) return 'That room is full or not available. Please choose another.';
+    const problem = roomGenderProblem(getRoom(room_id), gender);
+    if (problem) return problem;
+  }
   db.run(
-    `INSERT INTO users (role, name, student_no, email, phone, password_hash, room_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    role, name, student_no || '', email.toLowerCase(), phone || '', hashPassword(password), room_id ?? null, now()
+    `INSERT INTO users (role, name, student_no, email, phone, password_hash, room_id, gender, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    role, name, student_no || '', email.toLowerCase(), phone || '', hashPassword(password), room_id ?? null,
+    role === 'student' ? gender : null, now()
   );
   return null;
 }
@@ -240,6 +274,7 @@ app.use((req, res, next) => {
     fmtPeriod: (p) => new Date(p + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
     stars: (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n)),
     statusLabel: { vacant: 'Vacant', available: 'Space available', full: 'Full', reserved: 'Reserved', in_progress: 'In progress' },
+    GENDERS,
     // Address of the n-th apartment picture, for pages that use one as a background.
     photo: (n) => { const all = sitePhotos(); return all[n % all.length].src; },
   });
@@ -253,7 +288,12 @@ const requireRole = (role) => (req, res, next) => {
   }
   next();
 };
-const student = requireRole('student');
+const studentOnly = requireRole('student');
+// Students who registered before gender was asked are asked for it before anything else.
+const student = (req, res, next) => studentOnly(req, res, () => {
+  if (!req.user.gender && req.path !== '/student/gender') return res.redirect('/student/gender');
+  next();
+});
 const admin = requireRole('admin');
 const homeFor = (user) => (user.role === 'admin' ? '/admin' : '/student');
 
@@ -329,7 +369,7 @@ app.get('/register', (req, res) => {
   res.render('register', { ...showcase(req) });   // pictures and services beside the form
 });
 
-// Students register with name, phone and email only. The caretaker assigns the room.
+// Students register with name, phone, email and gender. The caretaker assigns the room.
 app.post('/register', (req, res) => {
   const email = str(req.body.email);
   const error = createUser({
@@ -338,6 +378,7 @@ app.post('/register', (req, res) => {
     email,
     phone: normPhone(req.body.phone),
     password: String(req.body.password || ''),
+    gender: readGender(req.body.gender),
   });
   if (error) { flash(res, 'error', error); return res.redirect('/register'); }
   startSession(res, db.get('SELECT id FROM users WHERE email = ?', email).id);
@@ -363,6 +404,9 @@ function scanRoomCode(user, roomId, code) {
     return ['ok', `Welcome! You are checked in to Room ${room.id}.`];
   }
   if (!isOpen(room)) return ['error', `Room ${room.id} is full. Please speak to the caretaker.`];
+  const problem = roomGenderProblem(room, user.gender, user.id);
+  if (problem === 'gender-missing') return ['error', 'Please tell us your gender first, then scan the room QR code again.'];
+  if (problem) return ['error', `${problem} Please speak to the caretaker about another room.`];
   db.run('UPDATE users SET room_id = ?, checked_in_at = ? WHERE id = ?', room.id, now(), user.id);
   return ['ok', `Welcome! You have been assigned to Room ${room.id}.`];
 }
@@ -384,6 +428,12 @@ function openRoomLink(req, res, roomId, code) {
     return res.redirect('/login');
   }
   if (u.role === 'admin') return res.redirect(getRoom(roomId) ? `/admin/rooms/${roomId}` : '/admin');
+  if (!u.gender) {
+    // Ask for their gender first, then carry on with this room.
+    const next = `/checkin/${roomId}?code=${code}`;
+    if (CHECKIN_PATH.test(next)) res.cookie('next', next, { httpOnly: true, sameSite: 'lax', maxAge: 15 * 60 * 1000 });
+    return res.redirect('/student/gender');
+  }
   flash(res, ...scanRoomCode(u, roomId, code));
   res.redirect('/student/room');
 }
@@ -413,11 +463,14 @@ app.get('/uploads/:file', (req, res) => {
   if (!req.user) return res.redirect('/login');
   const file = path.basename(req.params.file);
   if (req.user.role !== 'admin') {
+    // A student sees their own files, and the profile pictures of their roommates (shown with their
+    // contact details); never anyone else's payment screenshots or problem photos.
     const own = db.get(
       `SELECT 1 AS x FROM payments WHERE screenshot = ? AND user_id = ?
        UNION SELECT 1 FROM problems WHERE photo = ? AND user_id = ?
-       UNION SELECT 1 FROM users WHERE photo = ? AND id = ?`,
-      file, req.user.id, file, req.user.id, file, req.user.id
+       UNION SELECT 1 FROM users WHERE photo = ? AND id = ?
+       UNION SELECT 1 FROM users WHERE photo = ? AND room_id IS NOT NULL AND room_id = ?`,
+      file, req.user.id, file, req.user.id, file, req.user.id, file, req.user.room_id ?? -1
     );
     if (!own) return res.status(403).end();
   }
@@ -451,9 +504,16 @@ const showcase = (req) => ({
 
 // ---------- student ----------
 
+// The other students in the same room, with their contact details: roommates can see each other's
+// phone, email, student number and picture so they can reach one another in an emergency.
+// Only students in the same room are ever returned.
 const roommatesOf = (user) =>
   user.room_id
-    ? db.all(`SELECT id, name, phone FROM users WHERE room_id = ? AND id <> ? ORDER BY name`, user.room_id, user.id)
+    ? db.all(
+        `SELECT id, name, phone, email, student_no, photo, checked_in_at FROM users
+         WHERE room_id = ? AND id <> ? AND role = 'student' ORDER BY name`,
+        user.room_id, user.id
+      )
     : [];
 
 app.get('/student', student, (req, res) => {
@@ -467,6 +527,30 @@ app.get('/student/room', student, (req, res) => {
     roommates: roommatesOf(u),
     openProblems: db.get(`SELECT COUNT(*) AS n FROM problems WHERE user_id = ? AND status <> 'resolved'`, u.id).n,
   });
+});
+
+// Gender, for students who registered before it was asked. Once given, only the caretaker can
+// change it (admin student page), so a student cannot switch it to get into another room.
+app.get('/student/gender', student, (req, res) => {
+  if (req.user.gender) return res.redirect('/student');
+  res.render('student/gender');
+});
+
+app.post('/student/gender', student, (req, res) => {
+  if (req.user.gender) return res.redirect('/student');
+  const gender = readGender(req.body.gender);
+  if (!gender) { flash(res, 'error', 'Please choose your gender.'); return res.redirect('/student/gender'); }
+  // A student already placed in a room cannot be given a gender that clashes with it.
+  if (req.user.room_id) {
+    const problem = roomGenderProblem(getRoom(req.user.room_id), gender, req.user.id);
+    if (problem) {
+      flash(res, 'error', `${problem} Please speak to the caretaker, who will move you to another room.`);
+      return res.redirect('/student/gender');
+    }
+  }
+  db.run('UPDATE users SET gender = ? WHERE id = ?', gender, req.user.id);
+  flash(res, 'ok', 'Thank you.');
+  res.redirect(afterLogin(req, res, '/student'));
 });
 
 // Scan page: camera scanner, photo fallback, and typing the code by hand.
@@ -621,11 +705,16 @@ app.get('/admin/rooms/:id', admin, async (req, res) => {
     // A large picture the admin can download to print or send.
     png: await QRCode.toDataURL(checkinUrl, { ...qrOptions, width: 1024 }),
   };
+  // Students without a room who may move in here: those whose gender suits the room. Students
+  // whose gender is not recorded yet are listed apart, since they cannot be placed until it is.
+  const waiting = db.all(`SELECT id, name, student_no, gender FROM users WHERE role = 'student' AND room_id IS NULL ORDER BY name`);
   res.render('admin/room', {
     room,
     qr,
-    occupants: db.all(`SELECT id, name, student_no, phone, email, checked_in_at FROM users WHERE room_id = ? ORDER BY name`, room.id),
-    unassigned: db.all(`SELECT id, name, student_no FROM users WHERE role = 'student' AND room_id IS NULL ORDER BY name`),
+    occupants: db.all(`SELECT id, name, student_no, phone, email, gender, checked_in_at FROM users WHERE room_id = ? ORDER BY name`, room.id),
+    unassigned: waiting.filter((u) => u.gender && !roomGenderProblem(room, u.gender)),
+    otherGender: waiting.filter((u) => u.gender && roomGenderProblem(room, u.gender)).length,
+    noGender: waiting.filter((u) => !u.gender),
   });
 });
 
@@ -633,9 +722,15 @@ app.post('/admin/rooms/:id', admin, (req, res) => {
   const room = getRoom(int(req.params.id));
   if (!room) return res.redirect('/admin');
   const rent = Number(req.body.rent);
+  const gender = readGender(req.body.gender); // null: not marked, follows whoever lives there
+  // Marking a room for girls (or boys) only is refused while someone of the other gender lives there.
+  const clash = gender && db.get(
+    `SELECT name FROM users WHERE room_id = ? AND gender IS NOT NULL AND gender <> ? LIMIT 1`, room.id, gender
+  );
   if (req.body.rent === '' || !(rent >= 0)) flash(res, 'error', 'Please enter a valid rent amount.');
+  else if (clash) flash(res, 'error', `Room ${room.id} cannot be ${GENDERS[gender].group} only while ${clash.name} lives there.`);
   else {
-    db.run('UPDATE rooms SET rent = ? WHERE id = ?', rent, room.id);
+    db.run('UPDATE rooms SET rent = ?, gender = ? WHERE id = ?', rent, gender, room.id);
     flash(res, 'ok', `Room ${room.id} updated.`);
   }
   res.redirect(`/admin/rooms/${room.id}`);
@@ -660,10 +755,15 @@ app.post('/admin/rooms/:id/vacate', admin, (req, res) => {
 app.post('/admin/rooms/:id/assign', admin, (req, res) => {
   const id = int(req.params.id);
   const userId = int(req.body.user_id);
+  const s = getStudent(userId);
+  const problem = s && roomHasSpace(id) ? roomGenderProblem(getRoom(id), s.gender, s.id) : null;
   if (!roomHasSpace(id)) flash(res, 'error', 'That room is full or reserved.');
+  else if (!s) flash(res, 'error', 'Please choose a student.');
+  else if (problem === 'gender-missing') flash(res, 'error', `${s.name}'s gender is not recorded yet. Set it on their student page first.`);
+  else if (problem) flash(res, 'error', `${s.name} cannot be added: ${problem}`);
   else {
-    const { changes } = db.run(`UPDATE users SET room_id = ?, checked_in_at = NULL WHERE id = ? AND role = 'student'`, id, userId);
-    flash(res, changes ? 'ok' : 'error', changes ? 'Student added to the room. They can scan the room QR code to check in.' : 'Please choose a student.');
+    db.run(`UPDATE users SET room_id = ?, checked_in_at = NULL WHERE id = ? AND role = 'student'`, id, s.id);
+    flash(res, 'ok', 'Student added to the room. They can scan the room QR code to check in.');
   }
   res.redirect(`/admin/rooms/${id}`);
 });
@@ -695,6 +795,7 @@ app.post('/admin/students', admin, (req, res) => {
     phone: normPhone(req.body.phone),
     password: String(req.body.password || ''),
     room_id,
+    gender: readGender(req.body.gender),
   });
   flash(res, error ? 'error' : 'ok', error || 'Student added.');
   res.redirect('/admin/students');
@@ -719,8 +820,14 @@ app.post('/admin/students/:id', admin, (req, res) => {
   const room_id = req.body.room_id ? int(req.body.room_id) : null;
   const password = String(req.body.password || '');
   const phone = normPhone(req.body.phone);
+  const gender = readGender(req.body.gender);
+  // The room they will be in after saving, checked against their (possibly new) gender.
+  const newRoom = room_id !== null ? getRoom(room_id) : null;
+  const genderProblem = newRoom && gender ? roomGenderProblem(newRoom, gender, s.id) : null;
   let error = null;
   if (!name) error = 'Please enter a full name.';
+  else if (!gender) error = 'Please choose a gender.';
+  else if (genderProblem) error = `${name} cannot be in Room ${room_id}: ${genderProblem}`;
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) error = 'Please enter a valid email address.';
   else if (db.get('SELECT 1 AS x FROM users WHERE email = ? AND id <> ?', email, s.id)) error = 'That email address is used by another account.';
   else if (!validPhone(phone)) error = 'Please enter a valid phone number (students log in with it).';
@@ -730,8 +837,8 @@ app.post('/admin/students/:id', admin, (req, res) => {
 
   if (error) { flash(res, 'error', error); return res.redirect(`/admin/students/${s.id}`); }
   db.run(
-    'UPDATE users SET name = ?, student_no = ?, email = ?, phone = ?, room_id = ? WHERE id = ?',
-    name, str(req.body.student_no, 50), email.toLowerCase(), phone, room_id, s.id
+    'UPDATE users SET name = ?, student_no = ?, email = ?, phone = ?, room_id = ?, gender = ? WHERE id = ?',
+    name, str(req.body.student_no, 50), email.toLowerCase(), phone, room_id, gender, s.id
   );
   // A student who is moved to another room has to check in to the new one.
   if (room_id !== s.room_id) db.run('UPDATE users SET checked_in_at = NULL WHERE id = ?', s.id);

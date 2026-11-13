@@ -142,6 +142,16 @@ if (!all('PRAGMA table_info(users)').some((c) => c.name === 'checked_in_at')) {
   sqlite.exec('ALTER TABLE users ADD COLUMN checked_in_at TEXT');
 }
 
+// Gender: each student's ('female' or 'male'; empty for students who registered before it was
+// asked), and optionally each room's, when the caretaker marks it for girls or boys only. A room
+// never holds both: see roomGenderProblem in server.js.
+if (!all('PRAGMA table_info(users)').some((c) => c.name === 'gender')) {
+  sqlite.exec('ALTER TABLE users ADD COLUMN gender TEXT');
+}
+if (!all('PRAGMA table_info(rooms)').some((c) => c.name === 'gender')) {
+  sqlite.exec('ALTER TABLE rooms ADD COLUMN gender TEXT');
+}
+
 // Each room's QR code carries the room number plus a short secret code, so a student can only
 // join a room by scanning the code the caretaker shows them (not by guessing the room number).
 // Letters and digits that are easy to confuse (0/O, 1/I) are left out so it can be typed by hand.

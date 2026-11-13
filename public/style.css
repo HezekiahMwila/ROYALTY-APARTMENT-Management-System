@@ -519,6 +519,23 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
 .qr-room { font-size: 1.5rem; font-weight: 800; color: var(--heading); margin: 10px 0 2px; }
 .qr-code { margin: 6px 0 10px; color: var(--muted); }
 .qr-code b { font-family: Consolas, "Courier New", monospace; font-size: 1.25rem; letter-spacing: .18em; color: var(--red-ink); }
+/* ---------- gender ---------- */
+/* a choice of two (the student's gender page): two buttons, the chosen one blue */
+.choice { margin: 14px 0 6px; padding: 0; border: 0; min-width: 0; }
+.choice legend { padding: 0; margin-bottom: 8px; font-weight: 600; font-size: .9rem; }
+.choice-row { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choice input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.choice label { display: flex; align-items: center; justify-content: center; height: 48px; margin: 0; border: 1.5px solid var(--line); border-radius: 14px; font-size: 1rem; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+.choice label:hover { background: var(--blue-soft); }
+.choice input:checked + label { background: var(--blue); border-color: var(--blue); color: #fff; }
+.choice input:focus-visible + label { box-shadow: 0 0 0 3px var(--blue-soft); }
+/* "Girls only" / "Boys only" on rooms and students */
+.badge.female { background: rgba(242, 13, 29, .16); color: var(--red-ink); }
+.badge.male { background: var(--blue-soft); color: var(--blue-ink); }
+.room-for { display: inline-block; margin-top: 6px; font-size: .74rem; font-weight: 700; letter-spacing: .02em; padding: 1px 8px; border-radius: 999px; }
+.room-for.female { background: rgba(242, 13, 29, .16); color: var(--red-ink); }
+.room-for.male { background: var(--blue-soft); color: var(--blue-ink); }
+
 /* the branded card picture that prints (room-qr.js); never shown on screen */
 .qr-print { display: none; }
 
@@ -536,6 +553,18 @@ a.stat:focus-visible, a.room:focus-visible { outline-offset: 4px; }
 .profile-info { flex: 1; min-width: 220px; }
 .avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 0 0 3px var(--blue); display: block; flex: none; }
 .avatar.placeholder { background: linear-gradient(135deg, var(--blue), #0c1e4a); color: #fff; font-size: 2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+/* a roommate's contact details (partials/roommate_contact.ejs) */
+.mate { display: flex; gap: 16px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.mate:last-of-type { border-bottom: 0; }
+.mate-pic.avatar { width: 64px; height: 64px; font-size: 1.3rem; box-shadow: 0 0 0 2px var(--blue); border-width: 2px; }
+.mate-info { flex: 1; min-width: 0; }
+.mate-name { display: block; font-size: 1.1rem; margin-bottom: 4px; }
+.mate-details { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; margin: 0; font-size: .92rem; }
+.mate-details dt { color: var(--muted); }
+.mate-details dd { margin: 0; overflow-wrap: anywhere; }
+.mate-actions { margin-top: 10px; }
+.mate-note { margin: 12px 0 0; }
 
 /* ---------- rooms ---------- */
 .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }

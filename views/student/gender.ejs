@@ -1,0 +1,21 @@
+<%# Asked once of students who registered before gender was asked (server.js, /student/gender).
+    Rooms are for girls or boys, never both. Once saved, only the caretaker can change it. %>
+<%- include('../partials/head', { title: 'Your gender' }) %>
+<div class="card narrow">
+  <h1>One more thing</h1>
+  <p class="muted">Rooms at Royalty Apartments are for girls or for boys, so we need your gender before you carry on.</p>
+  <form method="post" action="/student/gender">
+    <fieldset class="choice">
+      <legend>Gender</legend>
+      <div class="choice-row">
+        <input type="radio" id="gender-female" name="gender" value="female" required>
+        <label for="gender-female">Female</label>
+        <input type="radio" id="gender-male" name="gender" value="male" required>
+        <label for="gender-male">Male</label>
+      </div>
+    </fieldset>
+    <p class="muted small">Only the caretaker can change this later.</p>
+    <button class="btn" type="submit">Save and continue</button>
+  </form>
+</div>
+<%- include('../partials/foot') %>

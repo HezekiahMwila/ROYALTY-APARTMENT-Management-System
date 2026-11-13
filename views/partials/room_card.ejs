@@ -12,4 +12,5 @@
     <span class="room-beds" aria-hidden="true"><% for (let i = 0; i < r.capacity; i++) { %><i class="<%= i < r.occupants ? 'taken' : '' %>"></i><% } %></span>
   </span>
   <span class="left"><%= lastLine %></span>
+  <% if (r.for && locals.GENDERS && r.status !== 'reserved') { %><span class="room-for <%= r.for %>"><%= GENDERS[r.for].room %></span><% } %>
 <% if (href) { %></a><% } else { %></div><% } %>

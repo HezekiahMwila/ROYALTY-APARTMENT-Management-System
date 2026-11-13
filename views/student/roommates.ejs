@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: 'Roommates' }) %>
 <div class="page-head">
-  <h1>Rate your roommates</h1>
-  <p class="muted">Give each roommate 1 to 5 stars. Only the caretaker sees who gave which rating, and you can change yours at any time.</p>
+  <h1>Your roommates</h1>
+  <p class="muted">Their contact details, for emergencies, and your rating of each. Give each roommate 1 to 5 stars. Only the caretaker sees who gave which rating, and you can change yours at any time.</p>
 </div>
 
 <% if (!roommates.length) { %>
@@ -10,7 +10,8 @@
 
 <% roommates.forEach(m => { %>
   <div class="card">
-    <h2><%= m.name %></h2>
+    <%- include('../partials/roommate_contact', { m }) %>
+    <h2 style="margin-top:16px">Your rating for <%= m.name.split(' ')[0] %></h2>
     <form method="post" action="/student/ratings">
       <input type="hidden" name="ratee_id" value="<%= m.id %>">
       <div class="stars-input" role="radiogroup" aria-label="Star rating for <%= m.name %>">

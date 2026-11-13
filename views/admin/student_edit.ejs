@@ -17,11 +17,16 @@
       <input id="email" name="email" type="email" value="<%= s.email %>" required>
       <label for="phone">Phone number <span class="opt">(their login)</span></label>
       <input id="phone" name="phone" type="tel" value="<%= s.phone %>" required>
-      <label for="room_id">Room</label>
+      <label for="gender">Gender <% if (!s.gender) { %><span class="opt">(not given yet: they will be asked when they next log in)</span><% } %></label>
+      <select id="gender" name="gender" required>
+        <option value="">Choose…</option>
+        <% Object.entries(GENDERS).forEach(([value, g]) => { %><option value="<%= value %>" <%= s.gender === value ? 'selected' : '' %>><%= g.label %></option><% }) %>
+      </select>
+      <label for="room_id">Room <span class="opt">(only a room for their gender is accepted)</span></label>
       <select id="room_id" name="room_id">
         <option value="">No room</option>
         <% rooms.forEach(r => { %>
-          <option value="<%= r.id %>" <%= r.id === s.room_id ? 'selected' : '' %>>Room <%= r.id %><%= r.id === s.room_id ? ' (current)' : ` (${r.capacity - r.occupants} free)` %></option>
+          <option value="<%= r.id %>" <%= r.id === s.room_id ? 'selected' : '' %>>Room <%= r.id %><%= r.id === s.room_id ? ' (current)' : ` (${r.capacity - r.occupants} free${r.for ? ', ' + GENDERS[r.for].group + ' only' : ''})` %></option>
         <% }) %>
       </select>
       <label for="password">Reset password <span class="opt">(leave blank to keep the current one)</span></label>

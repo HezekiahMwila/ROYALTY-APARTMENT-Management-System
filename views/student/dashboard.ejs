@@ -39,11 +39,14 @@
   </div>
 
   <div class="card">
-    <h2><%= roommates.length === 1 ? 'Roommate' : 'Roommates' %></h2>
-    <% if (!roommates.length) { %><p class="muted" style="margin:0">You have no roommates right now.</p><% } %>
-    <% roommates.forEach(m => { %>
-      <div class="item"><b><%= m.name %></b></div>
-    <% }) %>
+    <h2><%= roommates.length === 1 ? 'Your roommate' : 'Your roommates' %></h2>
+    <% if (!roommates.length) { %>
+      <p class="muted" style="margin:0">You have no roommates right now.</p>
+    <% } else { %>
+      <p class="muted small">Their contact details, so you can reach each other in an emergency.</p>
+      <% roommates.forEach(m => { %><%- include('../partials/roommate_contact', { m }) %><% }) %>
+    <% } %>
+    <p class="muted small mate-note">Your roommates can see your name, picture, phone number, email and student number in the same way.</p>
   </div>
 <% } %>
 <%- include('../partials/foot') %>
