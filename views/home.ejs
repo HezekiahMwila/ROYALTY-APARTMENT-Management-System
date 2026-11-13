@@ -136,7 +136,7 @@
 
 <%# ----- closing invitation ----- %>
 <section class="ld-section ld-cta" data-reveal>
-  <h2><%= user ? 'Welcome back, ' + firstName : 'Ready to move in?' %></h2>
+  <h2><% if (user) { %><span data-greeting><%= greeting %></span>, <%= firstName %><% } else { %>Ready to move in?<% } %></h2>
   <p><%= user ? 'Pick up where you left off.' : 'Students and the admin log in from the same page.' %></p>
   <div class="ld-actions">
     <% if (user) { %>

@@ -23,7 +23,6 @@
   const lit = (href) => href === '/admin' ? (path === '/admin' || path.startsWith('/admin/rooms')) : (path === href || path.startsWith(href + '/'));
   const waitingFor = { '/admin/payments': waitingCounts.payments, '/admin/problems': waitingCounts.problems };
   const onDashboard = path === '/admin';
-  const shortDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 %>
 <aside class="ad-side" aria-label="Admin menu">
   <a class="ad-side-logo" href="/"><img src="/logo.svg" alt="Royalty Apartments home page" width="1757" height="1067"></a>
@@ -44,7 +43,7 @@
   <nav class="ad-crumbs" aria-label="You are here">
     <a href="/"><%- pic('home') %>Home</a><i>/</i>
     <% if (onDashboard) { %><span><%- pic('home') %>Dashboard</span><% } else { %><a href="/admin"><%- pic('home') %>Dashboard</a><i>/</i><span><%- pic('page') %><%= title %></span><% } %>
-    <i>/</i><span class="ad-crumb-date"><%- pic('calendar') %><%= shortDate %></span>
+    <i>/</i><span class="ad-crumb-date"><%- pic('calendar') %><span data-date="short"><%= localDate('short') %></span></span>
   </nav>
   <div class="ad-tools">
     <%- include('theme_toggle') %>

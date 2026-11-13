@@ -6,11 +6,8 @@
     "/admin" route in server.js. %>
 <%- include('../partials/head', { title: 'Admin overview' }) %>
 <%
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const now = new Date();
-  const today = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const shortDate = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  // greeting and localDate come from server.js (boarding house time zone); /local-time.js then
+  // switches them to the admin's own clock.
   const firstName = user.name.split(' ')[0];
   const waiting = stats.pendingPayments + stats.openProblems;
   const percent = stats.beds ? Math.round((stats.students / stats.beds) * 100) : 0;
@@ -48,7 +45,7 @@
 
     <%# ----- greeting ----- %>
     <header class="ad-head" data-in>
-      <h1><%= greeting %>, <em><%= firstName %></em> !</h1>
+      <h1><span data-greeting><%= greeting %></span>, <em><%= firstName %></em> !</h1>
       <p>Rooms, students, payments and problems at Royalty Apartments, all in one place.</p>
     </header>
 
@@ -141,7 +138,7 @@
         <% } %>
       </p>
       <div class="ad-today-foot">
-        <span><%- icon('calendar') %><%= today %></span>
+        <span><%- icon('calendar') %><span data-date="long"><%= localDate('long') %></span></span>
         <% if (stats.pendingPayments) { %><a href="/admin/payments?status=pending">Review</a><% } else if (stats.openProblems) { %><a href="/admin/problems">Open</a><% } %>
       </div>
     </section>

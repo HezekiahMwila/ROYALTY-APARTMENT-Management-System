@@ -121,6 +121,20 @@ function createUser({ role, name, student_no, email, phone, password, room_id })
   return null;
 }
 
+// ---------- time of day ----------
+// The server may run in another time zone (Render uses UTC), so greetings and dates are worked
+// out for the boarding house's own zone. Set TIME_ZONE to change it. The same rules are in
+// /local-time.js, which then uses each visitor's own clock instead.
+const TIME_ZONE = process.env.TIME_ZONE || 'Africa/Lusaka';
+const localHour = () => Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: TIME_ZONE }).format(new Date()));
+// Morning 5:00–11:59, afternoon 12:00–16:59, evening 17:00–20:59, night 21:00–4:59.
+const greetingAt = (h) => (h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 21 ? 'Good evening' : 'Good night');
+const DATE_STYLES = {
+  long: { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }, // Friday 13 November 2026
+  short: { day: 'numeric', month: 'short' }, // 13 Nov
+};
+const formatDate = (d, style, timeZone) => d.toLocaleDateString('en-GB', { ...DATE_STYLES[style], timeZone }).replace(',', '');
+
 // The address phones should open when they scan a room QR code. Set PUBLIC_URL when the site
 // is hosted online. Otherwise use the address the admin is browsing on; if that is "localhost"
 // (which a phone cannot reach), swap in this computer's address on the local network.
@@ -217,6 +231,10 @@ app.use((req, res, next) => {
     flash: flashMsg,
     path: req.path,
     settings,
+    // Greeting and today's date, in the boarding house's time zone. The page is drawn with these,
+    // then /local-time.js switches them to the visitor's own clock ([data-greeting], [data-date]).
+    greeting: greetingAt(localHour()),
+    localDate: (style) => formatDate(new Date(), style, TIME_ZONE),
     money: (n) => `${settings.currency} ${Number(n).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     fmtDate: (iso) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''),
     fmtPeriod: (p) => new Date(p + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
@@ -349,10 +367,15 @@ function scanRoomCode(user, roomId, code) {
   return ['ok', `Welcome! You have been assigned to Room ${room.id}.`];
 }
 
-// The link inside the QR code. Phone cameras open it directly; the in-site scanner sends students here too.
-app.get('/checkin/:room', (req, res) => {
-  const roomId = int(req.params.room);
-  const code = str(req.query.code, 12).toUpperCase();
+// A room's link: what its QR code holds, and what is printed under it for phones that cannot scan.
+// Short (/r/12/ABC234) so a student can type it; /checkin/12?code=ABC234 is the older, longer form
+// on codes printed before, and still works.
+const roomLinkPath = (room) => `/r/${room.id}/${room.qr_code}`;
+app.get('/r/:room/:code', (req, res) => openRoomLink(req, res, int(req.params.room), str(req.params.code, 12).toUpperCase()));
+app.get('/checkin/:room', (req, res) => openRoomLink(req, res, int(req.params.room), str(req.query.code, 12).toUpperCase()));
+
+// Phone cameras open the link directly; the in-site scanner sends students here too.
+function openRoomLink(req, res, roomId, code) {
   const u = req.user;
   if (!u) {
     const next = `/checkin/${roomId}?code=${code}`;
@@ -363,7 +386,7 @@ app.get('/checkin/:room', (req, res) => {
   if (u.role === 'admin') return res.redirect(getRoom(roomId) ? `/admin/rooms/${roomId}` : '/admin');
   flash(res, ...scanRoomCode(u, roomId, code));
   res.redirect('/student/room');
-});
+}
 
 app.get('/account', (req, res) => {
   if (!req.user) return res.redirect('/login');
@@ -587,7 +610,10 @@ app.get('/admin', admin, (req, res) => {
 app.get('/admin/rooms/:id', admin, async (req, res) => {
   const room = getRoom(int(req.params.id));
   if (!room) return res.status(404).render('message', { title: 'Not found', text: 'That room does not exist.' });
-  const checkinUrl = `${publicOrigin(req)}/checkin/${room.id}?code=${room.qr_code}`;
+  const checkinUrl = publicOrigin(req) + roomLinkPath(room);
+  // The link as printed under the QR code, for typing: without "https://", which browsers add
+  // by themselves. A plain http address (a computer on the local Wi-Fi) keeps its "http://".
+  const typedLink = checkinUrl.replace(/^https:\/\//, '');
   // The QR code is sent as a picture (<img>), not drawn into the page, so the page's own styles
   // (such as the admin menu's line-icon style) cannot reshape its squares and make it unreadable.
   // margin: 4 is the white border QR readers expect around the code.
@@ -600,6 +626,7 @@ app.get('/admin/rooms/:id', admin, async (req, res) => {
   res.render('admin/room', {
     room,
     checkinUrl,
+    typedLink,
     qr,
     occupants: db.all(`SELECT id, name, student_no, phone, email, checked_in_at FROM users WHERE room_id = ? ORDER BY name`, room.id),
     unassigned: db.all(`SELECT id, name, student_no FROM users WHERE role = 'student' AND room_id IS NULL ORDER BY name`),

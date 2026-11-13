@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: 'Home', bodyClass: 'has-backdrop' }) %>
 <div class="hero-stage">
   <section class="hero big">
-    <h1>Welcome, <%= user.name.split(' ')[0] %>!</h1>
+    <h1><span data-greeting><%= greeting %></span>, <%= user.name.split(' ')[0] %>!</h1>
     <p><%= settings.welcome_message || 'Welcome to Royalty Apartments.' %></p>
     <p>
       <% if (user.room_id) { %>You are staying in <b>Room <%= user.room_id %></b>.

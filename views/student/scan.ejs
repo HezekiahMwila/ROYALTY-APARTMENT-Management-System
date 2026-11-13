@@ -58,10 +58,11 @@
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   let stream = null, raf = 0, done = false;
 
-  // A room QR code holds a link like https://site/checkin/12?code=ABC234.
-  // Only the room number and code are used, and the student always stays on this site.
+  // A room QR code holds a link like https://site/r/12/ABC234 (or, on older printed codes,
+  // https://site/checkin/12?code=ABC234). Only the room number and code are used, and the
+  // student always stays on this site.
   function handle(text) {
-    const m = /\/checkin\/(\d{1,4})\?code=([A-Za-z0-9]{4,12})/.exec(text || '');
+    const m = /\/r\/(\d{1,4})\/([A-Za-z0-9]{4,12})\b/.exec(text || '') || /\/checkin\/(\d{1,4})\?code=([A-Za-z0-9]{4,12})/.exec(text || '');
     if (!m) { status.textContent = 'That is not a Royalty Apartments room QR code. Try again.'; return false; }
     done = true;
     stop();

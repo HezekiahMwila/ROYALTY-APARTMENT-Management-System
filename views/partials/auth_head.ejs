@@ -5,13 +5,12 @@
 <%- include('meta', { title }) %>
 </head>
 <body class="auth">
-<% const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).replace(',', ''); %>
 <div class="auth-split">
   <aside class="auth-photo" style="background-image:url('<%= photo(1) %>')">
     <a class="auth-logo" href="/"><img src="/logo.svg" alt="Royalty Apartments home page" width="102" height="62"></a>
     <div class="auth-caption">
       <b>Royalty Apartments</b>
-      <span><%= today %></span>
+      <span data-date="long"><%= localDate('long') %></span>
     </div>
   </aside>
   <main class="auth-panel">
