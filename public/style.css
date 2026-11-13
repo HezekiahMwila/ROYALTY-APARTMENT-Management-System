@@ -840,9 +840,10 @@ details:not(.menu) summary:hover { color: var(--blue-ink); }
   .qr-card h2 { text-align: center; font-size: 1.6rem; }
   .qr { width: 360px; box-shadow: none; }
   .qr-room { font-size: 2.4rem; }
-  .qr-linkbox { max-width: 520px; border: 2px dashed #000 !important; }
-  .qr-linkbox span { color: #333 !important; font-size: 1rem; }
-  .qr-link { color: #000 !important; font-size: 1.35rem; font-weight: 700; }
+  /* The printed card shows only the QR code, the room and its code: no link. */
+  .qr-linkbox { display: none !important; }
+  .qr-code { font-size: 1.4rem; margin-top: 6px; }
+  .qr-code b { font-size: 2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

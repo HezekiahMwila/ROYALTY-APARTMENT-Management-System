@@ -1,8 +1,8 @@
-// Admin room page: the Download button saves a picture of the whole room card, ready to print
-// or send: the logo, "Room 12", the QR code, the room link for phones that cannot scan, and the code.
+// Admin room page: the Download button saves a picture of the room card, ready to print or send:
+// the logo, "Room 12", the QR code and the room code (no link).
 // The button's own link (the plain QR code picture) is the fallback if anything here fails.
 (function () {
-  var W = 1200, H = 1700, BLUE = '#123fdc', RED = '#f20d1d', INK = '#111111', GREY = '#555555';
+  var W = 1200, H = 1560, BLUE = '#123fdc', RED = '#f20d1d', INK = '#111111', GREY = '#555555';
   var FONT = '"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif';
   var MONO = 'Consolas, "Courier New", monospace';
 
@@ -15,21 +15,10 @@
     });
   }
 
-  // Largest font size (up to max) at which the text fits the width.
-  function fit(ctx, text, font, max, width) {
-    var size = max;
-    for (; size > 18; size -= 2) {
-      ctx.font = font.replace('SIZE', size);
-      if (ctx.measureText(text).width <= width) break;
-    }
-    return size;
-  }
-
   function centre(ctx, text, y) { ctx.fillText(text, W / 2, y); }
 
   async function draw(btn) {
     var room = btn.getAttribute('data-room');
-    var link = btn.getAttribute('data-link');
     var code = btn.getAttribute('data-code');
     var qr = await load(btn.getAttribute('href'));
     var logo = await load('/logo.svg').catch(function () { return null; });
@@ -62,24 +51,19 @@
     ctx.imageSmoothingEnabled = false; // keep the squares sharp
     ctx.drawImage(qr, (W - qs) / 2, y, qs, qs);
     ctx.imageSmoothingEnabled = true;
-    y += qs + 45;
+    y += qs + 60;
 
-    ctx.fillStyle = GREY; ctx.font = '500 40px ' + FONT;
-    centre(ctx, 'No camera? Open this link:', y + 34); y += 70;
-
-    var size = fit(ctx, link, '700 SIZEpx ' + MONO, 54, W - 120);
-    ctx.fillStyle = BLUE; ctx.font = '700 ' + size + 'px ' + MONO;
-    centre(ctx, link, y + size); y += size + 50;
-
-    ctx.fillStyle = GREY; ctx.font = '500 36px ' + FONT;
+    // the room code, large, under the QR code
+    var spaced = code.split('').join(' ');
+    ctx.fillStyle = GREY; ctx.font = '500 44px ' + FONT;
     var label = 'Room code: ';
     var lwid = ctx.measureText(label).width;
-    ctx.font = '700 44px ' + MONO;
-    var cwid = ctx.measureText(code.split('').join(' ')).width;
+    ctx.font = '700 72px ' + MONO;
+    var cwid = ctx.measureText(spaced).width;
     var x0 = (W - lwid - cwid) / 2;
     ctx.textAlign = 'left';
-    ctx.fillStyle = GREY; ctx.font = '500 36px ' + FONT; ctx.fillText(label, x0, y + 40);
-    ctx.fillStyle = RED; ctx.font = '700 44px ' + MONO; ctx.fillText(code.split('').join(' '), x0 + lwid, y + 40);
+    ctx.fillStyle = GREY; ctx.font = '500 44px ' + FONT; ctx.fillText(label, x0, y + 60);
+    ctx.fillStyle = RED; ctx.font = '700 72px ' + MONO; ctx.fillText(spaced, x0 + lwid, y + 60);
 
     return new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
   }
