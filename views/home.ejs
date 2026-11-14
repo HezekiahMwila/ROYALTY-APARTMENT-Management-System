@@ -47,7 +47,7 @@
 <%# the apartment pictures fill the window behind the page and change by themselves %>
 <div class="backdrop" aria-hidden="true">
   <% slides.forEach((s, i) => { %>
-    <figure class="slide <%= i === 0 ? 'on' : '' %>"><img src="<%= s.src %>" alt=""></figure>
+    <figure class="slide <%= i === 0 ? 'on' : '' %>"><img <%= i === 0 ? 'src' : 'data-src' %>="<%= s.src %>" alt=""></figure>
   <% }) %>
 </div>
 

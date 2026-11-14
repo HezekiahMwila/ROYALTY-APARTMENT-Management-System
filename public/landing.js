@@ -7,13 +7,22 @@
   var anim = root.classList.contains('anim');
 
   // ----- background pictures: a new one fades in every 6 seconds -----
+  // Only the first picture comes with the page. Each of the others is fetched one step ahead of
+  // being shown, so a phone downloads one picture at a time instead of all of them at once.
   var slides = [].slice.call(document.querySelectorAll('.backdrop .slide'));
+  function fetchSlide(i) {
+    var img = slides[i] && slides[i].querySelector('img[data-src]');
+    if (img) { img.src = img.getAttribute('data-src'); img.removeAttribute('data-src'); }
+  }
   if (anim && slides.length > 1) {
     var current = 0;
+    fetchSlide(1);
     setInterval(function () {
       slides[current].classList.remove('on');
       current = (current + 1) % slides.length;
+      fetchSlide(current);
       slides[current].classList.add('on');
+      fetchSlide((current + 1) % slides.length);
     }, 6000);
   }
 

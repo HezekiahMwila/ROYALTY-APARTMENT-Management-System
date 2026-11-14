@@ -488,7 +488,13 @@ app.get('/photos/:file', (req, res) => {
 
 // The apartment pictures used across the site: the ones the caretaker uploaded in Settings,
 // or, until there are any, the built-in pictures in public/slides.
-const BUILT_IN_SLIDES = ['Upper-floor balcony', 'Upper-floor rooms', 'Stairs to the courtyard', 'Ground-floor rooms'];
+const BUILT_IN_SLIDES = [
+  // daytime photos (slide-1 to slide-8)
+  'Upper-floor rooms', 'Ground-floor rooms', 'Garden lounge', 'Rooftop TV lounge',
+  'View over the rooftops', 'Entrance and parking', 'Upper-floor walkway', 'Walkway to the rooms',
+  // night photos (slide-9 to slide-12)
+  'Upper-floor balcony', 'Upper-floor rooms at night', 'Stairs to the courtyard', 'Ground-floor rooms at night',
+];
 function sitePhotos() {
   const uploaded = db.all('SELECT file, caption FROM photos ORDER BY id');
   return uploaded.length

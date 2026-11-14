@@ -2,7 +2,7 @@
     The pictures fill the whole browser window behind the page and change by themselves. %>
 <div class="backdrop" data-slideshow aria-hidden="true">
   <% slides.forEach((s, i) => { %>
-    <figure class="slide <%= i === 0 ? 'on' : '' %>"><img src="<%= s.src %>" alt=""></figure>
+    <figure class="slide <%= i === 0 ? 'on' : '' %>"><img <%= i === 0 ? 'src' : 'data-src' %>="<%= s.src %>" alt=""></figure>
   <% }) %>
 </div>
 
@@ -31,8 +31,15 @@
     var caption = ctrl.querySelector('.slide-caption');
     var captions = <%- JSON.stringify(slides.map(s => s.caption || '')).replace(/</g, '\\u003c') %>;
     var current = 0, timer = null;
+    // Only the first picture comes with the page; each other one is fetched just before it is needed.
+    function fetchSlide(i) {
+      var img = slides[i] && slides[i].querySelector('img[data-src]');
+      if (img) { img.src = img.getAttribute('data-src'); img.removeAttribute('data-src'); }
+    }
     function show(n) {
       current = (n + slides.length) % slides.length;
+      fetchSlide(current);
+      fetchSlide((current + 1) % slides.length);
       slides.forEach(function (s, i) { s.classList.toggle('on', i === current); });
       dots.forEach(function (d, i) { d.classList.toggle('on', i === current); });
       caption.textContent = captions[current];
@@ -49,6 +56,7 @@
     ctrl.addEventListener('mouseleave', start);
     ctrl.addEventListener('focusin', stop);
     ctrl.addEventListener('focusout', start);
+    fetchSlide(1);
     start();
   })();
 </script>
