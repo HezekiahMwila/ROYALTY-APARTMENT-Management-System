@@ -9,7 +9,7 @@
   <% } %>
   <div class="profile-info">
     <h1><%= user.name %></h1>
-    <p class="muted"><%= user.phone %></p>
+    <p class="muted"><%= formatPhone(user.phone) %></p>
     <form class="actions-row" method="post" action="/student/photo" enctype="multipart/form-data">
       <input name="photo" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Profile picture" required>
       <button class="btn sm" type="submit"><%= user.photo ? 'Change picture' : 'Upload picture' %></button>

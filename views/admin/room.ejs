@@ -16,7 +16,7 @@
           <div>
             <b><%= o.name %></b>
             <% if (GENDERS[o.gender]) { %><span class="badge <%= o.gender %>"><%= GENDERS[o.gender].label %></span><% } else { %><span class="badge pending">Gender not given</span><% } %><br>
-            <span class="muted small"><%= o.student_no || 'No student number' %> · <%= o.phone || o.email %></span><br>
+            <span class="muted small"><%= o.student_no || 'No student number' %> · <% if (o.phone) { %><a href="tel:<%= dialPhone(o.phone) %>"><%= formatPhone(o.phone) %></a><% } else { %><%= o.email %><% } %></span><br>
             <% if (o.checked_in_at) { %>
               <span class="badge approved">Checked in <%= fmtDate(o.checked_in_at) %></span>
             <% } else { %>

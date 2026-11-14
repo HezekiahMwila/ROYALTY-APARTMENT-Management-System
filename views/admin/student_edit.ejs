@@ -15,8 +15,8 @@
       <input id="student_no" name="student_no" value="<%= s.student_no %>">
       <label for="email">Email</label>
       <input id="email" name="email" type="email" value="<%= s.email %>" required>
-      <label for="phone">Phone number <span class="opt">(their login)</span></label>
-      <input id="phone" name="phone" type="tel" value="<%= s.phone %>" required>
+      <label for="phone">Phone number <span class="opt">(their login: a Zambian mobile number)</span></label>
+      <input id="phone" name="phone" type="tel" inputmode="tel" placeholder="097 123 4567" value="<%= formatPhone(s.phone) %>" required>
       <label for="gender">Gender <% if (!s.gender) { %><span class="opt">(not given yet: they will be asked when they next log in)</span><% } %></label>
       <select id="gender" name="gender" required>
         <option value="">Choose…</option>

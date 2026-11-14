@@ -3,6 +3,7 @@ const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { normalizePhone } = require('./phone');
 
 const TOTAL_ROOMS = 24;
 
@@ -150,6 +151,16 @@ if (!all('PRAGMA table_info(users)').some((c) => c.name === 'gender')) {
 }
 if (!all('PRAGMA table_info(rooms)').some((c) => c.name === 'gender')) {
   sqlite.exec('ALTER TABLE rooms ADD COLUMN gender TEXT');
+}
+
+// Phone numbers saved before they were checked: put each one in the standard form (phone.js), so
+// it matches however the student types it when logging in. A number that is not a Zambian
+// mobile number, or that would clash with another account's, is left as it is.
+for (const u of all(`SELECT id, phone FROM users WHERE phone <> ''`)) {
+  const standard = normalizePhone(u.phone);
+  if (!standard || standard === u.phone) continue;
+  if (get('SELECT 1 AS x FROM users WHERE phone = ? AND id <> ?', standard, u.id)) continue;
+  run('UPDATE users SET phone = ? WHERE id = ?', standard, u.id);
 }
 
 // Each room's QR code carries the room number plus a short secret code, so a student can only

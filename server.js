@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const QRCode = require('qrcode');
 const db = require('./db');
+const { normalizePhone, formatPhone, dialPhone, ZAMBIAN_MOBILE, PHONE_HINT } = require('./phone');
 
 const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(db.DATA_DIR, 'uploads');
@@ -40,13 +41,11 @@ app.use(express.urlencoded({ extended: false }));
 const now = () => new Date().toISOString();
 const str = (v, max = 200) => String(v ?? '').trim().slice(0, max);
 const int = (v) => (/^\d+$/.test(String(v ?? '')) ? Number(v) : NaN);
-// Phone numbers are the student login, so store them without spaces or dashes.
-const normPhone = (v) => {
-  const s = str(v, 30);
-  const digits = s.replace(/\D/g, '');
-  return digits ? (s.startsWith('+') ? '+' : '') + digits : '';
-};
-const validPhone = (p) => p.replace(/\D/g, '').length >= 7;
+// Phone numbers are the student login. They must be Zambian mobile numbers, and are saved in one
+// standard form ("0971234567") however they are typed: see phone.js.
+const normPhone = (v) => normalizePhone(str(v, 30));
+const validPhone = (p) => ZAMBIAN_MOBILE.test(p || '');
+const PHONE_ERROR = `Please enter ${PHONE_HINT}.`;
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -137,7 +136,7 @@ function createUser({ role, name, student_no, email, phone, password, room_id, g
   if (password.length < 6) return 'Password must be at least 6 characters.';
   if (db.get('SELECT 1 AS x FROM users WHERE email = ?', email)) return 'That email address is already registered.';
   if (role === 'student') {
-    if (!validPhone(phone || '')) return 'Please enter a valid phone number.';
+    if (!validPhone(phone)) return PHONE_ERROR;
     if (db.get('SELECT 1 AS x FROM users WHERE phone = ?', phone)) return 'That phone number is already registered.';
     if (!GENDERS[gender]) return 'Please choose a gender.';
   }
@@ -275,6 +274,9 @@ app.use((req, res, next) => {
     stars: (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n)),
     statusLabel: { vacant: 'Vacant', available: 'Space available', full: 'Full', reserved: 'Reserved', in_progress: 'In progress' },
     GENDERS,
+    // Phone numbers as shown ("097 123 4567") and as dialled from Call / Text links ("+260971234567").
+    formatPhone,
+    dialPhone,
     // Address of the n-th apartment picture, for pages that use one as a background.
     photo: (n) => { const all = sitePhotos(); return all[n % all.length].src; },
   });
@@ -343,11 +345,13 @@ app.post('/login', (req, res) => {
     flash(res, 'error', 'Too many failed attempts. Please try again in 15 minutes.');
     return res.redirect('/login');
   }
-  // Students log in with their phone number; an email address also works (admin).
+  // Students log in with their phone number, typed in any form (097…, +260 97…); an email
+  // address also works (admin). A number saved before numbers were checked, which could not be
+  // put in the standard form, still matches when typed exactly as it was saved.
   const login = str(req.body.login);
   const user = login.includes('@')
     ? db.get('SELECT * FROM users WHERE email = ?', login)
-    : db.get(`SELECT * FROM users WHERE phone <> '' AND phone = ?`, normPhone(login));
+    : db.get(`SELECT * FROM users WHERE phone <> '' AND phone = ?`, normPhone(login) || login.replace(/[^\d+]/g, ''));
   if (!user || !checkPassword(String(req.body.password || ''), user.password_hash)) {
     recordFail(req.ip);
     flash(res, 'error', 'Incorrect phone number or password.');
@@ -836,7 +840,7 @@ app.post('/admin/students/:id', admin, (req, res) => {
   else if (genderProblem) error = `${name} cannot be in Room ${room_id}: ${genderProblem}`;
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) error = 'Please enter a valid email address.';
   else if (db.get('SELECT 1 AS x FROM users WHERE email = ? AND id <> ?', email, s.id)) error = 'That email address is used by another account.';
-  else if (!validPhone(phone)) error = 'Please enter a valid phone number (students log in with it).';
+  else if (!validPhone(phone)) error = `${PHONE_ERROR} Students log in with it.`;
   else if (db.get('SELECT 1 AS x FROM users WHERE phone = ? AND id <> ?', phone, s.id)) error = 'That phone number is used by another account.';
   else if (room_id !== null && room_id !== s.room_id && !roomHasSpace(room_id)) error = 'That room is full or not available.';
   else if (password && password.length < 6) error = 'Password must be at least 6 characters.';
