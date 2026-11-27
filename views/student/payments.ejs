@@ -50,6 +50,12 @@
           <a href="/uploads/<%= p.screenshot %>" target="_blank" rel="noopener">view screenshot</a>
         </span>
         <% if (p.admin_note) { %><div class="small" style="margin-top:4px"><b>Admin note:</b> <%= p.admin_note %></div><% } %>
+        <% if (p.status === 'approved') { %>
+          <div class="actions-row receipt-links">
+            <a class="btn sm" href="/receipts/<%= p.id %>/pdf" download>Download receipt</a>
+            <a class="btn sm" href="/receipts/<%= p.id %>">View receipt</a>
+          </div>
+        <% } %>
       </div>
     <% }) %>
   </div>

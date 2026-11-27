@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receipt <%= r.no %> · Royalty Apartments</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <%# A payment receipt laid out as a till slip, 80 mm wide like POS printer paper. Only the logo
+      is in colour. The downloadable PDF (receipt.js) uses the same layout: change both together. %>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e6e6e6; color: #222; font-family: "Segoe UI", Roboto, Arial, sans-serif; padding: 16px 12px 32px; }
+    .bar { max-width: 320px; margin: 0 auto 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .bar a, .bar button { flex: 1; font: inherit; font-size: 14px; text-align: center; text-decoration: none; cursor: pointer;
+      padding: 9px 10px; border-radius: 6px; border: 1px solid #bbb; background: #fff; color: #222; white-space: nowrap; }
+    .bar .main { background: #222; border-color: #222; color: #fff; }
+    .bar a:hover, .bar button:hover { border-color: #222; }
+    .slip { width: 80mm; max-width: 100%; margin: 0 auto; background: #fff; padding: 22px 20px 18px; font-size: 12.5px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .15); }
+    .logo { display: block; width: 120px; height: auto; margin: 0 auto; }
+    .c { text-align: center; }
+    h1 { margin: 10px 0 2px; font-size: 17px; letter-spacing: 5px; color: #222; }
+    .muted { color: #777; }
+    .sep { border-top: 1px dashed #999; margin: 12px 0; }
+    .lbl { font-size: 10.5px; letter-spacing: 1.5px; color: #777; text-transform: uppercase; margin-bottom: 4px; }
+    .row { display: flex; justify-content: space-between; gap: 10px; margin: 4px 0; }
+    .row span:first-child { color: #777; }
+    .row span:last-child { text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+    .total { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 15px; }
+    .total b { font-size: 19px; }
+    .words { font-style: italic; color: #555; font-size: 11.5px; margin-top: 4px; }
+    .foot { text-align: center; color: #777; font-size: 11px; line-height: 1.5; }
+    @page { size: 80mm auto; margin: 0; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .bar { display: none; }
+      .slip { box-shadow: none; width: 80mm; padding: 6mm 5mm; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="bar" aria-label="Receipt actions">
+    <a href="<%= back %>">&larr; Back</a>
+    <button type="button" onclick="window.print()">Print</button>
+    <a class="main" href="/receipts/<%= r.id %>/pdf" download>Download PDF</a>
+  </nav>
+
+  <main class="slip">
+    <img class="logo" src="/logo.svg" alt="Royalty Apartments">
+    <div class="c">
+      <h1>RECEIPT</h1>
+      <div>No. <b><%= r.no %></b></div>
+      <div class="muted"><%= r.issued %></div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="lbl">Received from</div>
+    <div class="row"><span>Name</span><span><%= r.name %></span></div>
+    <% if (r.phone) { %><div class="row"><span>Phone</span><span><%= r.phone %></span></div><% } %>
+    <% if (r.room) { %><div class="row"><span>Room</span><span><%= r.room %></span></div><% } %>
+
+    <div class="sep"></div>
+    <div class="lbl">Payment details</div>
+    <div class="row"><span>Method</span><span><%= r.method %></span></div>
+    <div class="row"><span>Submitted</span><span><%= r.submitted %></span></div>
+    <div class="row"><span>Approved</span><span><%= r.approved %></span></div>
+
+    <div class="sep"></div>
+    <div class="row"><span><%= r.description %></span><span></span></div>
+    <div class="row"><span><%= r.period %></span><span><%= r.amount %></span></div>
+
+    <div class="sep"></div>
+    <div class="total"><span>TOTAL PAID</span><b><%= r.amount %></b></div>
+    <% if (r.words) { %><div class="words"><%= r.words %></div><% } %>
+
+    <div class="sep"></div>
+    <div class="foot">
+      Royalty Apartments<br>
+      This receipt was issued electronically and is valid without a physical signature. Keep it for your records.<br><br>
+      Thank you!
+    </div>
+  </main>
+</body>
+</html>

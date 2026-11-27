@@ -153,6 +153,14 @@ if (!all('PRAGMA table_info(rooms)').some((c) => c.name === 'gender')) {
   sqlite.exec('ALTER TABLE rooms ADD COLUMN gender TEXT');
 }
 
+// Receipts: an approved payment gets a receipt number (RA-2026-0001, …) and the time it was
+// issued. See receipt.js.
+if (!all('PRAGMA table_info(payments)').some((c) => c.name === 'receipt_no')) {
+  sqlite.exec('ALTER TABLE payments ADD COLUMN receipt_no TEXT');
+  sqlite.exec('ALTER TABLE payments ADD COLUMN receipt_issued_at TEXT');
+}
+sqlite.exec('CREATE UNIQUE INDEX IF NOT EXISTS payments_receipt_no ON payments (receipt_no)');
+
 // Phone numbers saved before they were checked: put each one in the standard form (phone.js), so
 // it matches however the student types it when logging in. A number that is not a Zambian
 // mobile number, or that would clash with another account's, is left as it is.
