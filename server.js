@@ -8,6 +8,7 @@ const os = require('os');
 const QRCode = require('qrcode');
 const db = require('./db');
 const { normalizePhone, formatPhone, dialPhone, ZAMBIAN_MOBILE, PHONE_HINT } = require('./phone');
+const { issueReceipt, receiptData, receiptPdf } = require('./receipt');
 
 const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(db.DATA_DIR, 'uploads');
@@ -895,9 +896,46 @@ app.post('/admin/payments/:id/review', admin, (req, res) => {
       `UPDATE payments SET status = ?, admin_note = ?, reviewed_at = ? WHERE id = ? AND status = 'pending'`,
       status, str(req.body.note, 300), now(), int(req.params.id)
     );
-    flash(res, changes ? 'ok' : 'error', changes ? `Payment ${status}.` : 'That payment was already reviewed.');
+    if (!changes) flash(res, 'error', 'That payment was already reviewed.');
+    else if (status === 'approved') {
+      // "Approve and issue Receipt": the receipt is numbered now and stays on the payment, for
+      // the admin to open or print again and for the student to download.
+      const no = issueReceipt(int(req.params.id), TIME_ZONE);
+      flash(res, 'ok', `Payment approved. Receipt ${no} issued; the student can now download it.`);
+    } else flash(res, 'ok', 'Payment rejected.');
   }
   res.redirect(req.body.back === 'pending' ? '/admin/payments?status=pending' : '/admin/payments');
+});
+
+// ---------- receipts ----------
+// A receipt can be seen by the admin and by the student who made the payment, and only once the
+// payment is approved.
+function findReceipt(req, res) {
+  if (!req.user) { res.redirect('/login'); return null; }
+  const id = int(req.params.id);
+  const p = db.get('SELECT id, user_id, status FROM payments WHERE id = ?', id);
+  const allowed = p && (req.user.role === 'admin' || p.user_id === req.user.id);
+  if (!allowed || p.status !== 'approved') {
+    res.status(404).render('message', { title: 'Receipt not found', text: 'There is no receipt for that payment. A receipt is issued once the payment is approved.' });
+    return null;
+  }
+  issueReceipt(id, TIME_ZONE); // payments approved before receipts existed get one now
+  return receiptData(id, { currency: req.settings.currency, timeZone: TIME_ZONE });
+}
+
+app.get('/receipts/:id', (req, res) => {
+  const r = findReceipt(req, res);
+  if (!r) return;
+  res.render('receipt', { r, back: req.user.role === 'admin' ? '/admin/payments?status=approved' : '/student/payments' });
+});
+
+app.get('/receipts/:id/pdf', (req, res) => {
+  const r = findReceipt(req, res);
+  if (!r) return;
+  res.set('Content-Type', 'application/pdf');
+  res.set('Content-Disposition', `attachment; filename="Receipt-${r.no}.pdf"`);
+  res.set('Cache-Control', 'private, no-store');
+  receiptPdf(r, res);
 });
 
 app.get('/admin/problems', admin, (req, res) => {

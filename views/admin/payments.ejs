@@ -1,7 +1,7 @@
 <%- include('../partials/head', { title: 'Payments' }) %>
 <div class="page-head">
   <h1>Payments</h1>
-  <p class="muted">Open the screenshot to check a payment, then approve or reject it.</p>
+  <p class="muted">Open the screenshot to check a payment, then approve it (this issues the student's receipt) or reject it.</p>
 </div>
 
 <div class="tabs">
@@ -31,11 +31,18 @@
         <form class="actions-row" method="post" action="/admin/payments/<%= p.id %>/review">
           <input type="hidden" name="back" value="<%= filter %>">
           <input name="note" maxlength="300" placeholder="Note to student (optional)" aria-label="Note to student">
-          <button class="btn sm green" type="submit" name="action" value="approve">Approve</button>
+          <button class="btn sm green" type="submit" name="action" value="approve">Approve and issue Receipt</button>
           <button class="btn sm danger" type="submit" name="action" value="reject">Reject</button>
         </form>
       <% } else { %>
         <span class="muted small">Reviewed <%= fmtDate(p.reviewed_at) %><%= p.admin_note ? ' · Note: ' + p.admin_note : '' %></span>
+        <% if (p.status === 'approved') { %>
+          <div class="actions-row receipt-links">
+            <span class="small">Receipt <b><%= p.receipt_no || '' %></b></span>
+            <a class="btn sm" href="/receipts/<%= p.id %>">View receipt</a>
+            <a class="btn sm" href="/receipts/<%= p.id %>/pdf" download>Download PDF</a>
+          </div>
+        <% } %>
       <% } %>
     </div>
   <% }) %>
